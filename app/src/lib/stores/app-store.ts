@@ -5305,24 +5305,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
     isLocalCommit: boolean,
     continueWithForcePush: boolean = false
   ) {
-    const repositoryState = this.repositoryStateCache.get(repository)
-    const { tip } = repositoryState.branchesState
-    const { askForConfirmationOnForcePush } = this.getState()
-
-    if (
-      askForConfirmationOnForcePush &&
-      !continueWithForcePush &&
-      !isLocalCommit &&
-      tip.kind === TipState.Valid
-    ) {
-      return this._showPopup({
-        type: PopupType.WarnForcePush,
-        operation: 'Amend',
-        onBegin: () => {
-          this._startAmendingRepository(repository, commit, isLocalCommit, true)
-        },
-      })
-    }
 
     await this._changeRepositorySection(
       repository,

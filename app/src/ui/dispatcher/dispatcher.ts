@@ -3383,25 +3383,6 @@ export class Dispatcher {
 
     this.appStore._setMultiCommitOperationUndoState(repository, tip)
 
-    const { askForConfirmationOnForcePush } = this.appStore.getState()
-
-    if (askForConfirmationOnForcePush && !continueWithForcePush) {
-      const showWarning = await this.warnAboutRemoteCommits(
-        repository,
-        tip.branch,
-        lastRetainedCommitRef
-      )
-
-      if (showWarning) {
-        this.setMultiCommitOperationStep(repository, {
-          kind: MultiCommitOperationStepKind.WarnForcePush,
-          targetBranch: tip.branch,
-          baseBranch: tip.branch,
-          commits: commitsToReorder,
-        })
-        return
-      }
-    }
 
     const result = await this.appStore._reorderCommits(
       repository,
@@ -3491,25 +3472,6 @@ export class Dispatcher {
 
     this.appStore._setMultiCommitOperationUndoState(repository, tip)
 
-    const { askForConfirmationOnForcePush } = this.appStore.getState()
-
-    if (askForConfirmationOnForcePush && !continueWithForcePush) {
-      const showWarning = await this.warnAboutRemoteCommits(
-        repository,
-        tip.branch,
-        lastRetainedCommitRef
-      )
-
-      if (showWarning) {
-        this.setMultiCommitOperationStep(repository, {
-          kind: MultiCommitOperationStepKind.WarnForcePush,
-          targetBranch: tip.branch,
-          baseBranch: tip.branch,
-          commits: toSquash,
-        })
-        return
-      }
-    }
 
     const result = await this.appStore._squash(
       repository,

@@ -727,14 +727,15 @@ export class CommitList extends React.Component<
   ): IMenuItem[] {
     const isLocal = this.isLocalCommit(commit.sha)
 
-    const canBeUndone =
-      this.props.canUndoCommits === true && isLocal && row === 0
+    // Allow undoing the most recent commit regardless of whether it has already
+    // been pushed, so the user retains full control over their commit history.
+    const canBeUndone = this.props.canUndoCommits === true && row === 0
     const canBeAmended = this.props.canAmendCommits === true && row === 0
-    // The user can reset to any commit up to the first non-local one (included).
-    // They cannot reset to the most recent commit... because they're already
-    // in it.
-    const isResettableCommit =
-      row > 0 && row <= this.props.localCommitSHAs.length
+    // The user can reset to any commit in the history other than the most
+    // recent one (they're already in it). We intentionally don't restrict this
+    // to unpushed commits so the user has full control over their history;
+    // resetting onto an already-pushed commit simply requires a force push.
+    const isResettableCommit = row > 0
     const canBeResetTo =
       this.props.canResetToCommits === true && isResettableCommit
     const canBeCheckedOut = row > 0 //Cannot checkout the current commit
