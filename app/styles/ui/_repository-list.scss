@@ -68,10 +68,22 @@
   }
 
   .filter-list-group-header {
+    // Fill the row width so the group divider line spans the full width
+    // instead of only the width of the label text.
+    flex-grow: 1;
+
     padding-top: var(--spacing);
     text-overflow: ellipsis;
     overflow-x: hidden;
     white-space: nowrap;
+
+    // Divider line separating each repository group
+    border-top: var(--base-border);
+
+    // The first group sits at the top of the list and doesn't need a divider
+    &.first-group {
+      border-top: none;
+    }
   }
 
   .new-repository-button {

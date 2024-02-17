@@ -28,31 +28,15 @@ describe('repository list grouping', () => {
 
   const cache = new Map<number, ILocalRepositoryState>()
 
-  it('groups repositories by owners/Enterprise/Other', () => {
+  it('returns a single, ungrouped list containing every repository', () => {
     const grouped = groupRepositories(repositories, cache, [])
-    assert.equal(grouped.length, 3)
 
-    assert.equal(grouped[0].identifier.kind, 'dotcom')
-    assert.equal((grouped[0].identifier as any).owner.login, 'me')
-    assert.equal(grouped[0].items.length, 1)
-
-    let item = grouped[0].items[0]
-    assert.equal(item.repository.path, 'repo2')
-
-    assert.equal(grouped[1].identifier.kind, 'enterprise')
-    assert.equal(grouped[1].items.length, 1)
-
-    item = grouped[1].items[0]
-    assert.equal(item.repository.path, 'repo3')
-
-    assert.equal(grouped[2].identifier.kind, 'other')
-    assert.equal(grouped[2].items.length, 1)
-
-    item = grouped[2].items[0]
-    assert.equal(item.repository.path, 'repo1')
+    assert.equal(grouped.length, 1)
+    assert.equal(grouped[0].identifier.kind, 'other')
+    assert.equal(grouped[0].items.length, 3)
   })
 
-  it('sorts repositories alphabetically within each group', () => {
+  it('sorts all repositories alphabetically', () => {
     const repoA = new Repository('a', 1, null, false)
     const repoB = new Repository(
       'b',
@@ -60,40 +44,32 @@ describe('repository list grouping', () => {
       gitHubRepoFixture({ owner: 'me', name: 'b' }),
       false
     )
-    const repoC = new Repository('c', 2, null, false)
+    const repoC = new Repository('c', 3, null, false)
     const repoD = new Repository(
       'd',
-      2,
+      4,
       gitHubRepoFixture({ owner: 'me', name: 'd' }),
       false
     )
-    const repoZ = new Repository('z', 3, null, false)
+    const repoZ = new Repository('z', 5, null, false)
 
     const grouped = groupRepositories(
       [repoC, repoB, repoZ, repoD, repoA],
       cache,
       []
     )
-    assert.equal(grouped.length, 2)
+    assert.equal(grouped.length, 1)
 
-    assert.equal(grouped[0].identifier.kind, 'dotcom')
-    assert.equal((grouped[0].identifier as any).owner.login, 'me')
-    assert.equal(grouped[0].items.length, 2)
-
-    let items = grouped[0].items
-    assert.equal(items[0].repository.path, 'b')
-    assert.equal(items[1].repository.path, 'd')
-
-    assert.equal(grouped[1].identifier.kind, 'other')
-    assert.equal(grouped[1].items.length, 3)
-
-    items = grouped[1].items
+    const items = grouped[0].items
+    assert.equal(items.length, 5)
     assert.equal(items[0].repository.path, 'a')
-    assert.equal(items[1].repository.path, 'c')
-    assert.equal(items[2].repository.path, 'z')
+    assert.equal(items[1].repository.path, 'b')
+    assert.equal(items[2].repository.path, 'c')
+    assert.equal(items[3].repository.path, 'd')
+    assert.equal(items[4].repository.path, 'z')
   })
 
-  it('only disambiguates Enterprise repositories', () => {
+  it('disambiguates repositories that share a name', () => {
     const repoA = new Repository(
       'repo',
       1,
@@ -106,51 +82,23 @@ describe('repository list grouping', () => {
       gitHubRepoFixture({ owner: 'user2', name: 'repo' }),
       false
     )
-    const repoC = new Repository(
-      'enterprise-repo',
-      3,
-      gitHubRepoFixture({
-        owner: 'business',
-        name: 'enterprise-repo',
-        endpoint: 'https://ghe.io/api/v3',
-      }),
-      false
-    )
-    const repoD = new Repository(
-      'enterprise-repo',
-      3,
-      gitHubRepoFixture({
-        owner: 'silliness',
-        name: 'enterprise-repo',
-        endpoint: 'https://ghe.io/api/v3',
-      }),
-      false
-    )
+    const repoC = new Repository('unique', 3, null, false)
 
-    const grouped = groupRepositories([repoA, repoB, repoC, repoD], cache, [])
-    assert.equal(grouped.length, 3)
+    const grouped = groupRepositories([repoA, repoB, repoC], cache, [])
+    assert.equal(grouped.length, 1)
 
-    assert.equal(grouped[0].identifier.kind, 'dotcom')
-    assert.equal((grouped[0].identifier as any).owner.login, 'user1')
-    assert.equal(grouped[0].items.length, 1)
+    const items = grouped[0].items
+    assert.equal(items.length, 3)
 
-    assert.equal(grouped[1].identifier.kind, 'dotcom')
-    assert.equal((grouped[1].identifier as any).owner.login, 'user2')
-    assert.equal(grouped[1].items.length, 1)
+    // The two repositories named "repo" need disambiguation; the unique one
+    // does not.
+    const repoItems = items.filter(i => i.text[0] === 'repo')
+    assert.equal(repoItems.length, 2)
+    assert(repoItems[0].needsDisambiguation)
+    assert(repoItems[1].needsDisambiguation)
 
-    assert.equal(grouped[2].identifier.kind, 'enterprise')
-    assert.equal(grouped[2].items.length, 2)
-
-    assert.equal(grouped[0].items[0].text[0], 'repo')
-    assert(!grouped[0].items[0].needsDisambiguation)
-
-    assert.equal(grouped[1].items[0].text[0], 'repo')
-    assert(!grouped[1].items[0].needsDisambiguation)
-
-    assert.equal(grouped[2].items[0].text[0], 'enterprise-repo')
-    assert(grouped[2].items[0].needsDisambiguation)
-
-    assert.equal(grouped[2].items[1].text[0], 'enterprise-repo')
-    assert(grouped[2].items[1].needsDisambiguation)
+    const uniqueItem = items.find(i => i.text[0] === 'unique')
+    assert(uniqueItem !== undefined)
+    assert(!uniqueItem.needsDisambiguation)
   })
 })
