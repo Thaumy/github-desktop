@@ -160,3 +160,36 @@
     }
   }
 }
+
+// Light theme: blend the title bar with the (now light) toolbar instead of
+// using the dark gradient / black border that suit the dark theme. The
+// transparent `.light-title-bar` overlay variant is handled above and excluded
+// here so it keeps its own treatment.
+body.platform-darwin.theme-light #desktop-app-title-bar:not(.light-title-bar) {
+  background: var(--toolbar-background-color);
+  border-bottom: none;
+}
+
+body.platform-win32.theme-light #desktop-app-title-bar:not(.light-title-bar) {
+  border-bottom: 1px solid var(--toolbar-border-color);
+
+  .window-controls button {
+    &:hover {
+      background-color: #e5e5e5;
+      color: #000;
+
+      &:active {
+        background-color: #cccccc;
+      }
+    }
+
+    &.close:hover {
+      background-color: #e81123;
+      color: #fff;
+
+      &:active {
+        background-color: #bf0f1d;
+      }
+    }
+  }
+}
