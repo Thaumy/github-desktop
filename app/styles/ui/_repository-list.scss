@@ -49,6 +49,9 @@
       // Long repository names truncate and ellipse
       @include ellipsis;
 
+      font-family: var(--font-family-monospace);
+      font-style: normal;
+
       .prefix {
         color: var(--text-secondary-color);
       }
@@ -63,7 +66,7 @@
     }
 
     .alias {
-      font-style: italic;
+      font-style: normal;
     }
   }
 
