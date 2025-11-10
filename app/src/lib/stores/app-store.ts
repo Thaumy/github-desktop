@@ -68,7 +68,6 @@ import {
 } from '../../models/remote'
 import {
   ILocalRepositoryState,
-  nameOf,
   Repository,
   isRepositoryWithGitHubRepository,
   RepositoryWithGitHubRepository,
@@ -469,11 +468,6 @@ const tabSizeKey: string = 'tab-size'
 const shellKey = 'shell'
 
 const repositoryIndicatorsEnabledKey = 'enable-repository-indicators'
-
-// background fetching should occur hourly when Desktop is active, but this
-// lower interval ensures user interactions like switching repositories and
-// switching between apps does not result in excessive fetching in the app
-const BackgroundFetchMinimumInterval = 30 * 60 * 1000
 
 /**
  * Wait 2 minutes before refreshing repository indicators
@@ -2179,38 +2173,9 @@ export class AppStore extends TypedBaseStore<IAppState> {
     repository: Repository,
     lastPush: Date | null
   ): Promise<boolean> {
-    const gitStore = this.gitStoreCache.get(repository)
-    const lastFetched = await gitStore.updateLastFetched()
-
-    if (lastFetched === null) {
-      return true
-    }
-
-    const now = new Date()
-    const timeSinceFetch = now.getTime() - lastFetched.getTime()
-    const repoName = nameOf(repository)
-    if (timeSinceFetch < BackgroundFetchMinimumInterval) {
-      const timeInSeconds = Math.floor(timeSinceFetch / 1000)
-
-      log.debug(
-        `Skipping background fetch as '${repoName}' was fetched ${timeInSeconds}s ago`
-      )
-      return false
-    }
-
-    if (lastPush === null) {
-      return true
-    }
-
-    // we should fetch if the last push happened after the last fetch
-    if (lastFetched < lastPush) {
-      return true
-    }
-
-    log.debug(
-      `Skipping background fetch since nothing has been pushed to '${repoName}' since the last fetch at ${lastFetched}`
-    )
-
+    // Automatic background fetching is intentionally disabled so the app never
+    // contacts the remote on its own; fetches only happen when the user
+    // explicitly requests them.
     return false
   }
 
@@ -2218,26 +2183,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
     repository: Repository,
     withInitialSkew: boolean
   ) {
-    if (this.currentBackgroundFetcher) {
-      fatalError(
-        `We should only have on background fetcher active at once, but we're trying to start background fetching on ${repository.name} while another background fetcher is still active!`
-      )
-    }
-
-    if (!repository.gitHubRepository) {
-      return
-    }
-
-    // Todo: add logic to background checker to check the API before fetching
-    // similar to what's being done in `refreshAllIndicators`
-    const fetcher = new BackgroundFetcher(
-      repository,
-      this.accountsStore,
-      r => this._fetch(r, FetchType.BackgroundTask),
-      r => this.shouldBackgroundFetch(r, null)
+    // Automatic background fetching is intentionally disabled so the app never
+    // contacts the remote on its own; fetches only happen when the user
+    // explicitly requests them.
+    log.debug(
+      `Skipping automatic background fetching for '${repository.name}' (auto-fetch is disabled, withInitialSkew=${withInitialSkew})`
     )
-    fetcher.start(withInitialSkew)
-    this.currentBackgroundFetcher = fetcher
   }
 
   /** Load the initial state for the app. */
