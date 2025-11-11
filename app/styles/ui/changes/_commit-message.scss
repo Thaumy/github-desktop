@@ -92,6 +92,7 @@
 
       input {
         width: 100%;
+        font-family: var(--font-family-monospace);
       }
     }
 
@@ -237,7 +238,7 @@
       border: none;
       color: currentColor;
       font-size: var(--font-size);
-      font-family: var(--font-family-sans-serif);
+      font-family: var(--font-family-monospace);
       padding: var(--spacing-half);
       resize: none;
       min-height: 100px;
