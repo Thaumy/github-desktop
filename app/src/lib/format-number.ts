@@ -1,4 +1,6 @@
 import { getNumberFormatPreference } from '../models/formatting-preferences'
+import { round } from '../ui/lib/round'
+import { enableFormattingPreferences } from './feature-flag'
 
 /**
  * Format a number using the given separator configuration.
@@ -14,6 +16,10 @@ export function formatNumber(
   value: number,
   fmt = getNumberFormatPreference()
 ): string {
+  if (!enableFormattingPreferences()) {
+    return value.toString()
+  }
+
   if (!Number.isFinite(value)) {
     return String(value)
   }
@@ -34,4 +40,32 @@ export function formatNumber(
       : formattedInt
 
   return isNegative ? `-${result}` : result
+}
+
+export function formatCompactNumber(value: number) {
+  if (!enableFormattingPreferences()) {
+    return value.toString()
+  }
+
+  if (!Number.isFinite(value)) {
+    return `${value}`
+  }
+
+  if (value < 1000) {
+    return formatNumber(value)
+  }
+
+  const decimals = value < 10000 ? 1 : 0
+  const units = ['', 'k', 'm', 'b', 't']
+  const unitIx = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(Math.abs(value)) / Math.log(1000))
+  )
+
+  if (unitIx === 0) {
+    return formatNumber(value) + ' ' + units[unitIx]
+  }
+
+  const result = round(value / Math.pow(1000, unitIx), decimals)
+  return formatNumber(result) + ' ' + units[unitIx]
 }
