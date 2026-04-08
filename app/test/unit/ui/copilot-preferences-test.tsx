@@ -172,4 +172,50 @@ describe('CopilotPreferences', () => {
 
     assert.ok(screen.getByRole('heading', { level: 2 }))
   })
+
+  it('falls back to first option when default model is not in the list', () => {
+    const noDefaultModels: ReadonlyArray<ModelInfo> = [
+      makeModel({ id: 'model-a', name: 'Model A', billing: { multiplier: 1 } }),
+      makeModel({ id: 'model-b', name: 'Model B', billing: { multiplier: 2 } }),
+    ]
+
+    const view = render(
+      <CopilotPreferences
+        selectedCopilotModel={null}
+        copilotModels={noDefaultModels}
+        copilotAvailable={true}
+        onSelectedCopilotModelChanged={() => {}}
+      />
+    )
+
+    const select = view.container.querySelector('select') as HTMLSelectElement
+    // With selectedCopilotModel=null the value falls back to DefaultCopilotModel,
+    // which isn't in the list — the browser selects the first option.
+    assert.strictEqual(select.value, 'model-a')
+
+    // No option should have the "(default)" suffix
+    const options = view.container.querySelectorAll('option')
+    for (const opt of options) {
+      assert.ok(
+        !opt.textContent?.includes('(default)'),
+        `Option "${opt.textContent}" should not show (default) suffix`
+      )
+    }
+  })
+
+  it('falls back to first option when persisted model is not in the list', () => {
+    const view = render(
+      <CopilotPreferences
+        selectedCopilotModel="deleted-model"
+        copilotModels={models}
+        copilotAvailable={true}
+        onSelectedCopilotModelChanged={() => {}}
+      />
+    )
+
+    const select = view.container.querySelector('select') as HTMLSelectElement
+    // "deleted-model" is not a valid option, so the browser falls back
+    // to the first available option.
+    assert.strictEqual(select.value, DefaultCopilotModel)
+  })
 })
