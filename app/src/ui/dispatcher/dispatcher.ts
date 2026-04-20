@@ -54,6 +54,7 @@ import type {
   CopilotFeature,
   CopilotModelSelections,
 } from '../../lib/stores/copilot-store'
+import type { IBYOKProvider } from '../../lib/copilot/byok'
 import { RepositoryStateCache } from '../../lib/stores/repository-state-cache'
 import { getTipSha } from '../../lib/tip'
 
@@ -4104,5 +4105,32 @@ export class Dispatcher {
   /** Fetch the list of available Copilot models from the SDK. */
   public fetchCopilotModels(): Promise<void> {
     return this.appStore._fetchCopilotModels()
+  }
+
+  /**
+   * Add a new BYOK Copilot provider. The secret (API key / bearer token)
+   * is stored separately in the OS keychain.
+   */
+  public addCopilotBYOKProvider(
+    provider: IBYOKProvider,
+    secret: string | null
+  ): Promise<void> {
+    return this.appStore._addCopilotBYOKProvider(provider, secret)
+  }
+
+  /**
+   * Update a BYOK Copilot provider. Pass `secret = undefined` to leave the
+   * stored secret untouched, `null` to clear it, or a string to overwrite it.
+   */
+  public updateCopilotBYOKProvider(
+    provider: IBYOKProvider,
+    secret: string | null | undefined
+  ): Promise<void> {
+    return this.appStore._updateCopilotBYOKProvider(provider, secret)
+  }
+
+  /** Remove a BYOK Copilot provider and its stored secret. */
+  public deleteCopilotBYOKProvider(id: string): Promise<void> {
+    return this.appStore._deleteCopilotBYOKProvider(id)
   }
 }
