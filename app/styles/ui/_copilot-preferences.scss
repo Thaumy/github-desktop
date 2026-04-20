@@ -50,6 +50,14 @@
       align-items: center;
       gap: var(--spacing-half);
       font-weight: var(--font-weight-semibold);
+      min-width: 0;
+
+      > span:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
     }
 
     .copilot-byok-provider-meta {
@@ -70,6 +78,7 @@
       font-weight: var(--font-weight-normal);
       text-transform: uppercase;
       letter-spacing: 0.04em;
+      flex-shrink: 0;
     }
 
     .copilot-byok-provider-actions {
