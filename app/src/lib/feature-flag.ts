@@ -112,6 +112,8 @@ export function enableAccessibleListToolTips(): boolean {
   return enableBetaFeatures()
 }
 
+export const enableCopilotConflictResolution = enableBetaFeatures
+
 export const enableHooksEnvironment = () => true
 
 export const enableHooksByDefault = enableBetaFeatures

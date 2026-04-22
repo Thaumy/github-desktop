@@ -128,6 +128,7 @@ import { isAbsolute } from 'path'
 import { CLIAction } from '../../lib/cli-action'
 import { BypassReasonType } from '../secret-scanning/bypass-push-protection-dialog'
 import { ICopilotConflictResolutionResponse } from '../../lib/copilot-conflict-resolution'
+import { ConflictResolutionProgress } from '../../lib/stores/copilot-store'
 
 /**
  * An error handler function.
@@ -1106,12 +1107,14 @@ export class Dispatcher {
   }
 
   /**
-   * Use Copilot to analyze and suggest resolutions for merge conflicts.
+   * Use Copilot to analyze and suggest resolutions for conflicts
+   * from merge, rebase, or cherry-pick operations.
    */
   public resolveConflictsWithCopilot(
-    repository: RepositoryWithGitHubRepository
+    repository: Repository,
+    onProgress?: (progress: ConflictResolutionProgress) => void
   ): Promise<ICopilotConflictResolutionResponse | null> {
-    return this.appStore._resolveConflictsWithCopilot(repository)
+    return this.appStore._resolveConflictsWithCopilot(repository, onProgress)
   }
 
   /** Remove the given account from the app. */

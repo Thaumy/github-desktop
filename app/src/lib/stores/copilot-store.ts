@@ -7,8 +7,16 @@ import {
 } from '../copilot-commit-message'
 import {
   ICopilotConflictResolutionResponse,
+  IFileResolution,
   parseCopilotConflictResolution,
 } from '../copilot-conflict-resolution'
+import {
+  ICopilotConflictContext,
+  IConflictCommitContext,
+  IFileConflictContext,
+  formatConflictContextForPrompt,
+} from '../copilot-conflict-context'
+import { PullRequest } from '../../models/pull-request'
 import { Emitter, Disposable } from 'event-kit'
 import * as ipcRenderer from '../ipc-renderer'
 import { join } from 'path'
@@ -66,13 +74,13 @@ the JSON object, just return it as plain text. For example:
 const ConflictResolutionSystemPrompt = `
 You have all the context you need below. Do NOT attempt to use tools. Respond ONLY with the JSON format specified.
 
-You are an expert merge conflict resolver for a Git repository. Your task is to analyze merge conflicts and produce correct, clean resolutions.
+You are an expert Git conflict resolver. Your task is to analyze conflicts from merge, rebase, or cherry-pick operations and produce correct, clean resolutions.
 
 You will receive:
-- Branch names for both sides of the merge
+- Labels for both sides of the conflict (e.g., branch names or commit references)
 - The conflict markers from each conflicted file (ours, theirs, and optionally base content)
 - Context lines surrounding each conflict
-- When available: recent commit messages from both branches explaining the intent behind changes
+- When available: recent commit messages from both sides explaining the intent behind changes
 - When available: the pull request title and description providing higher-level context
 
 Your job:
@@ -103,6 +111,39 @@ Important:
 - All conflict markers must be removed in the resolved content
 - Include one resolution entry per conflicted file
 `
+
+/** Progress information emitted during conflict resolution. */
+export type ConflictResolutionProgress =
+  | {
+      readonly kind: 'analyzing'
+      readonly filesTotal: number
+    }
+  | {
+      readonly kind: 'chunk-complete'
+      readonly filesResolved: number
+      readonly filesTotal: number
+    }
+  | {
+      readonly kind: 'complete'
+    }
+
+/**
+ * Maximum number of files to resolve in a single prompt. When the total
+ * exceeds this threshold, the engine batches files into parallel chunks.
+ */
+const SinglePromptFileLimit = 20
+
+/**
+ * Chunk sizes used when batching files across parallel prompts.
+ * Smaller chunks for very large conflicts reduce token usage and
+ * improve reliability.
+ */
+function getChunkSize(fileCount: number): number {
+  return fileCount > 100 ? 15 : 20
+}
+
+/** Maximum number of chunks to resolve concurrently. */
+const MaxConcurrentChunks = 5
 
 /**
  * This store manages the Copilot client lifecycle based on the user's
@@ -239,55 +280,168 @@ export class CopilotStore {
   }
 
   /**
-   * Use the Copilot SDK to analyze merge conflicts and suggest resolutions.
+   * Use the Copilot SDK to analyze conflicts and suggest resolutions.
    *
-   * @param conflictPrompt - The formatted conflict context prompt string
+   * For small conflict sets (≤20 files) a single prompt is sent. Larger sets
+   * are automatically batched into parallel chunks with up to 5 concurrent
+   * requests. Each chunk is retried once on parse failure.
+   *
+   * @param context - The structured conflict context (files with hunks)
+   * @param commitContext - Optional commit history from both sides
+   * @param pullRequest - Optional pull request for enrichment
    * @param repositoryPath - Path to the repository working directory
+   * @param onProgress - Optional callback for streaming progress to the UI
    * @returns The parsed conflict resolution response
    * @throws Error if no GitHub.com account is available or if resolution fails
    */
   public async resolveConflicts(
-    conflictPrompt: string,
-    repositoryPath: string
+    context: ICopilotConflictContext,
+    commitContext: IConflictCommitContext | null,
+    pullRequest: PullRequest | null,
+    repositoryPath: string,
+    onProgress?: (progress: ConflictResolutionProgress) => void
   ): Promise<ICopilotConflictResolutionResponse> {
+    const resolvableFiles = context.files.filter(f => !f.skippedReason)
+    const filesTotal = resolvableFiles.length
+
+    if (filesTotal === 0) {
+      throw new Error('No resolvable conflicted files')
+    }
+
+    onProgress?.({ kind: 'analyzing', filesTotal })
+
     const client = await this.createClient(repositoryPath)
-    let session: Awaited<ReturnType<CopilotClient['createSession']>> | null =
-      null
 
     try {
-      session = await client.createSession({
-        model: 'gpt-5-mini',
-        reasoningEffort: 'medium',
-        availableTools: [],
-        systemMessage: {
-          mode: 'append',
-          content: ConflictResolutionSystemPrompt,
-        },
-        onPermissionRequest: async () => ({
-          kind: 'denied-interactively-by-user',
-        }),
-      })
-
-      const response = await session.sendAndWait(
-        { prompt: conflictPrompt },
-        60000
-      )
-
-      if (!response || !response.data.content) {
-        throw new Error('No response from Copilot')
+      if (filesTotal <= SinglePromptFileLimit) {
+        const prompt = formatConflictContextForPrompt(
+          context,
+          commitContext,
+          pullRequest
+        )
+        const resolutions = await this.resolveChunk(
+          client,
+          prompt,
+          resolvableFiles
+        )
+        onProgress?.({ kind: 'complete' })
+        return { resolutions }
       }
 
-      return parseCopilotConflictResolution(response.data.content)
-    } catch (e) {
-      log.warn('CopilotStore: Failed to resolve conflicts', e)
-      throw e
-    } finally {
-      // Clean up the session
-      await session?.destroy().catch(() => {})
+      // Batch into chunks and resolve concurrently
+      const chunkSize = getChunkSize(filesTotal)
+      const chunks = createChunks(resolvableFiles, chunkSize)
+      const allResolutions: Array<IFileResolution> = []
+      let filesResolved = 0
 
-      // Stop the client after use
+      // Process chunks with bounded concurrency
+      for (let i = 0; i < chunks.length; i += MaxConcurrentChunks) {
+        const batch = chunks.slice(i, i + MaxConcurrentChunks)
+        const batchResults = await Promise.all(
+          batch.map(chunkFiles => {
+            const chunkContext: ICopilotConflictContext = {
+              ourLabel: context.ourLabel,
+              theirLabel: context.theirLabel,
+              files: chunkFiles,
+            }
+            const prompt = formatConflictContextForPrompt(
+              chunkContext,
+              commitContext,
+              pullRequest
+            )
+            return this.resolveChunk(client, prompt, chunkFiles)
+          })
+        )
+
+        for (const resolutions of batchResults) {
+          allResolutions.push(...resolutions)
+          filesResolved += resolutions.length
+          onProgress?.({
+            kind: 'chunk-complete',
+            filesResolved,
+            filesTotal,
+          })
+        }
+      }
+
+      onProgress?.({ kind: 'complete' })
+      return { resolutions: allResolutions }
+    } finally {
       await this.stopClient(client)
     }
+  }
+
+  /**
+   * Resolve a single chunk of files. Retries once on parse failure.
+   * Validates that returned paths match the requested files.
+   */
+  private async resolveChunk(
+    client: CopilotClient,
+    prompt: string,
+    expectedFiles: ReadonlyArray<IFileConflictContext>
+  ): Promise<ReadonlyArray<IFileResolution>> {
+    const expectedPaths = new Set(expectedFiles.map(f => f.path))
+    let lastError: Error | undefined
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let session: Awaited<ReturnType<CopilotClient['createSession']>> | null =
+        null
+
+      try {
+        session = await client.createSession({
+          model: 'gpt-5-mini',
+          reasoningEffort: 'medium',
+          availableTools: [],
+          systemMessage: {
+            mode: 'append',
+            content: ConflictResolutionSystemPrompt,
+          },
+          onPermissionRequest: async () => ({
+            kind: 'denied-interactively-by-user',
+          }),
+        })
+
+        const response = await session.sendAndWait({ prompt }, 60000)
+
+        if (!response || !response.data.content) {
+          throw new Error('No response from Copilot')
+        }
+
+        const parsed = parseCopilotConflictResolution(response.data.content)
+
+        // Validate returned paths match requested files
+        const returnedPaths = new Set(parsed.resolutions.map(r => r.path))
+        for (const path of returnedPaths) {
+          if (!expectedPaths.has(path)) {
+            throw new Error(
+              `Copilot returned resolution for unexpected file: ${path}`
+            )
+          }
+        }
+
+        // Check for duplicate paths
+        if (returnedPaths.size !== parsed.resolutions.length) {
+          throw new Error(
+            'Copilot returned duplicate file paths in resolutions'
+          )
+        }
+
+        return parsed.resolutions
+      } catch (e) {
+        lastError = e instanceof Error ? e : new Error(String(e))
+        if (attempt === 0) {
+          log.warn(
+            'CopilotStore: Conflict resolution attempt failed, retrying',
+            e
+          )
+        }
+      } finally {
+        await session?.destroy().catch(() => {})
+      }
+    }
+
+    log.warn('CopilotStore: Failed to resolve conflicts after retry', lastError)
+    throw lastError ?? new Error('Conflict resolution failed')
   }
 
   /**
@@ -303,4 +457,16 @@ export class CopilotStore {
   protected emitError(error: Error): void {
     this.emitter.emit('did-error', error)
   }
+}
+
+/** Split an array into chunks of the given size. */
+function createChunks<T>(
+  items: ReadonlyArray<T>,
+  size: number
+): ReadonlyArray<ReadonlyArray<T>> {
+  const chunks: Array<ReadonlyArray<T>> = []
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size))
+  }
+  return chunks
 }

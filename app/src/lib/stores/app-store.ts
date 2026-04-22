@@ -364,8 +364,9 @@ import { getRepoHooks } from '../hooks/get-repo-hooks'
 import { ICopilotConflictResolutionResponse } from '../copilot-conflict-resolution'
 import {
   buildConflictContext,
-  formatConflictContextForPrompt,
+  gatherCommitContext,
 } from '../copilot-conflict-context'
+import { ConflictResolutionProgress } from './copilot-store'
 
 const LastSelectedRepositoryIDKey = 'last-selected-repository-id'
 
@@ -5697,7 +5698,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   /** This shouldn't be called directly. See 'Dispatcher'. */
   public async _resolveConflictsWithCopilot(
-    repository: RepositoryWithGitHubRepository
+    repository: Repository,
+    onProgress?: (progress: ConflictResolutionProgress) => void
   ): Promise<ICopilotConflictResolutionResponse | null> {
     if (!enableCopilotConflictResolution()) {
       return null
@@ -5707,7 +5709,52 @@ export class AppStore extends TypedBaseStore<IAppState> {
       const state = this.repositoryStateCache.get(repository)
       const { conflictState } = state.changesState
 
-      if (conflictState === null || !isMergeConflictState(conflictState)) {
+      if (conflictState === null) {
+        return null
+      }
+
+      // Extract labels and refs for all conflict types
+      let ourLabel: string
+      let theirLabel: string
+      let ourRef: string | undefined
+      let theirRef: string | undefined
+
+      if (isMergeConflictState(conflictState)) {
+        ourLabel = conflictState.currentBranch
+        ourRef = conflictState.currentBranch
+
+        // Determine their branch from multiCommitOperationState or MERGE_HEAD
+        const { multiCommitOperationState } = state
+        const theirBranch = await this.getMergeConflictsTheirBranch(
+          repository,
+          false,
+          multiCommitOperationState
+        )
+        theirLabel = theirBranch ?? 'incoming branch'
+        theirRef = theirBranch
+      } else if (isRebaseConflictState(conflictState)) {
+        ourLabel = conflictState.baseBranch ?? 'current branch'
+        ourRef = conflictState.baseBranch
+        theirLabel = conflictState.targetBranch
+        theirRef = conflictState.targetBranch
+      } else if (isCherryPickConflictState(conflictState)) {
+        ourLabel = conflictState.targetBranchName
+        ourRef = conflictState.targetBranchName
+
+        const { multiCommitOperationState } = state
+        if (
+          multiCommitOperationState !== null &&
+          multiCommitOperationState.operationDetail.kind ===
+            MultiCommitOperationKind.CherryPick &&
+          multiCommitOperationState.operationDetail.sourceBranch !== null
+        ) {
+          theirLabel =
+            multiCommitOperationState.operationDetail.sourceBranch.name
+          theirRef = theirLabel
+        } else {
+          theirLabel = 'cherry-picked commit'
+        }
+      } else {
         return null
       }
 
@@ -5721,18 +5768,30 @@ export class AppStore extends TypedBaseStore<IAppState> {
       }
 
       const context = await buildConflictContext(
-        conflictState,
+        ourLabel,
+        theirLabel,
         repository.path,
         conflictedFiles
       )
 
-      const promptString = formatConflictContextForPrompt(context)
+      // Best-effort enrichment — never block resolution on these
+      const commitContext =
+        ourRef && theirRef
+          ? await gatherCommitContext(repository, ourRef, theirRef).catch(
+              () => null
+            )
+          : null
+
+      const currentPullRequest = state.branchesState.currentPullRequest ?? null
 
       this.statsStore.recordCopilotConflictResolutionInvoked()
 
       const result = await this.copilotStore.resolveConflicts(
-        promptString,
-        repository.path
+        context,
+        commitContext,
+        currentPullRequest,
+        repository.path,
+        onProgress
       )
 
       this.statsStore.recordCopilotConflictResolutionSucceeded()
