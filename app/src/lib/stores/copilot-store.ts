@@ -178,7 +178,7 @@ export class CopilotStore extends BaseStore {
 
   private cachedModels: ReadonlyArray<ModelInfo> | null = null
   private modelsCachedAt: number = 0
-  private modelsInFlight: Promise<ReadonlyArray<ModelInfo>> | null = null
+  private modelsInFlight: Promise<ReadonlyArray<ModelInfo> | null> | null = null
 
   public constructor(private readonly accountsStore: AccountsStore) {
     super()
@@ -387,19 +387,14 @@ export class CopilotStore extends BaseStore {
    * Lists the available Copilot models from the SDK, using a cached result if
    * it is less than {@link ModelListCacheTTL} old.
    *
-   * Returns an empty array on failure or when no account is available.
+   * Returns `null` when the model list is unavailable (no signed-in
+   * GitHub.com account, or the SDK fetch failed and we have no prior
+   * cache). Callers should distinguish this from an empty array, which
+   * would mean Copilot legitimately reports no models.
    */
-  public async listModels(): Promise<ReadonlyArray<ModelInfo>> {
-    return this.getCachedModels()
-  }
-
-  /**
-   * Returns the cached model list, refreshing it from the SDK if the cache
-   * has expired.
-   */
-  private async getCachedModels(): Promise<ReadonlyArray<ModelInfo>> {
+  public async listModels(): Promise<ReadonlyArray<ModelInfo> | null> {
     if (this.currentAccount === null) {
-      return []
+      return null
     }
 
     if (
@@ -409,6 +404,20 @@ export class CopilotStore extends BaseStore {
       return this.cachedModels
     }
 
+    return this.fetchAndCacheModels()
+  }
+
+  /**
+   * Returns the cached model list, refreshing it from the SDK if the cache
+   * has expired. Internal callers that need to pick a model from whatever
+   * we know about right now use this entry point and treat "unavailable"
+   * the same as "empty list".
+   */
+  private async getCachedModels(): Promise<ReadonlyArray<ModelInfo>> {
+    return (await this.listModels()) ?? []
+  }
+
+  private async fetchAndCacheModels(): Promise<ReadonlyArray<ModelInfo> | null> {
     // Deduplicate concurrent fetches — if one is already in flight, reuse it.
     if (this.modelsInFlight !== null) {
       return this.modelsInFlight
@@ -422,7 +431,7 @@ export class CopilotStore extends BaseStore {
     }
   }
 
-  private async fetchModels(): Promise<ReadonlyArray<ModelInfo>> {
+  private async fetchModels(): Promise<ReadonlyArray<ModelInfo> | null> {
     const client = await this.createClient()
 
     try {
@@ -433,7 +442,7 @@ export class CopilotStore extends BaseStore {
       return models
     } catch (e) {
       log.warn('CopilotStore: Failed to list models', e)
-      return this.cachedModels ?? []
+      return this.cachedModels
     } finally {
       await this.stopClient(client)
     }
