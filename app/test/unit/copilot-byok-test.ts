@@ -158,8 +158,12 @@ describe('isLocalBaseUrl', () => {
     assert.strictEqual(isLocalBaseUrl('http://127.1.2.3/'), true)
   })
 
-  it('matches 0.0.0.0', () => {
-    assert.strictEqual(isLocalBaseUrl('http://0.0.0.0:11434/'), true)
+  it('does not match 0.0.0.0', () => {
+    assert.strictEqual(isLocalBaseUrl('http://0.0.0.0:11434/'), false)
+  })
+
+  it('does not match malformed 127/8 addresses', () => {
+    assert.strictEqual(isLocalBaseUrl('http://127.999.0.1/'), false)
   })
 
   it('matches IPv6 loopback in bracketed form', () => {

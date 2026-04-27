@@ -1,3 +1,4 @@
+import { isIPv4 } from 'net'
 import { TokenStore } from '../stores/token-store'
 import type { ReasoningEffort } from '../stores/copilot-store'
 
@@ -195,8 +196,8 @@ export function requiresNewBYOKSecret(
 
 /**
  * Returns true if the given base URL points at the local machine. Used to
- * surface a "Local" badge in the provider list. Recognises both IPv4 (127/8
- * and 0.0.0.0) and IPv6 loopback in bracketed and bare forms.
+ * surface a "Local" badge in the provider list. Recognises the entire IPv4
+ * 127/8 loopback block as well as IPv6 loopback in bracketed and bare forms.
  */
 export function isLocalBaseUrl(baseUrl: string): boolean {
   let hostname: string
@@ -206,7 +207,7 @@ export function isLocalBaseUrl(baseUrl: string): boolean {
     return false
   }
 
-  if (hostname === 'localhost' || hostname === '0.0.0.0') {
+  if (hostname === 'localhost') {
     return true
   }
 
@@ -216,7 +217,7 @@ export function isLocalBaseUrl(baseUrl: string): boolean {
   }
 
   // Any 127.0.0.0/8 address is loopback (RFC 1122 §3.2.1.3).
-  if (/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
+  if (isIPv4(hostname) && hostname.startsWith('127.')) {
     return true
   }
 
