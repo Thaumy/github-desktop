@@ -266,7 +266,7 @@ $overlay-background-color: rgba(0, 0, 0, 0.4);
 
   --toolbar-button-color: var(--toolbar-text-color);
   --toolbar-button-background-color: transparent;
-  --toolbar-button-border-color: transparent;
+  --toolbar-button-border-color: var(--box-border-color);
   --toolbar-button-secondary-color: var(--toolbar-text-secondary-color);
 
   --toolbar-button-hover-color: var(--text-color);
