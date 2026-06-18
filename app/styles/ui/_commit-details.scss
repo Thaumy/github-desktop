@@ -17,8 +17,8 @@
     background: var(--box-alt-background-color);
     border-bottom: 1px solid var(--box-border-color);
     border-right: var(--base-border);
-    height: 30px;
-    line-height: 30px;
+    height: var(--tab-bar-height);
+    line-height: var(--tab-bar-height);
     flex: 0 0 auto;
     padding: 0 var(--spacing);
     text-align: center;
