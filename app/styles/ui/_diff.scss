@@ -914,7 +914,8 @@
     flex-grow: 0;
     align-items: center;
 
-    padding: var(--spacing-half) var(--spacing);
+    height: var(--tab-bar-height);
+    padding: 0 var(--spacing);
 
     @include octicon-status;
 
