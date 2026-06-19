@@ -167,7 +167,7 @@
 // here so it keeps its own treatment.
 body.platform-darwin.theme-light #desktop-app-title-bar:not(.light-title-bar) {
   background: var(--toolbar-background-color);
-  border-bottom: none;
+  border-bottom: 1.5px solid var(--toolbar-border-color);
 }
 
 body.platform-win32.theme-light #desktop-app-title-bar:not(.light-title-bar) {
