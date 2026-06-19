@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { clipboard } from 'electron'
 
 import { Commit, CommitOneLine, ICommitContext } from '../../models/commit'
 import {
@@ -182,7 +183,8 @@ export class CompareSidebar extends React.Component<
             onFocus={showBranchList ? this.onTextBoxFocused : undefined}
             value={filterText}
             disabled={
-              showBranchList && !branches.some(b => !b.isDesktopForkRemoteBranch)
+              showBranchList &&
+              !branches.some(b => !b.isDesktopForkRemoteBranch)
             }
             onRef={this.onTextBoxRef}
             onValueChanged={
@@ -291,6 +293,7 @@ export class CompareSidebar extends React.Component<
         onCreateTag={this.onCreateTag}
         onDeleteTag={this.onDeleteTag}
         onCherryPick={this.onCherryPick}
+        onCopyCommitPatch={this.onCopyCommitPatch}
         onDropCommitInsertion={this.onDropCommitInsertion}
         onKeyboardReorder={this.onKeyboardReorder}
         onCancelKeyboardReorder={this.onCancelKeyboardReorder}
@@ -706,6 +709,17 @@ export class CompareSidebar extends React.Component<
 
   private onCherryPick = (commits: ReadonlyArray<CommitOneLine>) => {
     this.props.onCherryPick(this.props.repository, commits)
+  }
+
+  private onCopyCommitPatch = async (commits: ReadonlyArray<CommitOneLine>) => {
+    const patch = await this.props.dispatcher.getCommitPatch(
+      this.props.repository,
+      commits.map(c => c.sha)
+    )
+
+    if (patch.length > 0) {
+      clipboard.writeText(patch)
+    }
   }
 
   private onKeyboardReorder = (toReorder: ReadonlyArray<Commit>) => {

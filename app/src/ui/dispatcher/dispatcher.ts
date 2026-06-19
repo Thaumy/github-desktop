@@ -739,6 +739,14 @@ export class Dispatcher {
     return this.appStore._checkoutCommit(repository, commit)
   }
 
+  /** Generate a `git format-patch` style patch for the given commits. */
+  public getCommitPatch(
+    repository: Repository,
+    shas: ReadonlyArray<string>
+  ): Promise<string> {
+    return this.appStore._getCommitPatch(repository, shas)
+  }
+
   /** Push the current branch. */
   public push(repository: Repository): Promise<void> {
     return this.appStore._push(repository)

@@ -174,6 +174,7 @@ import {
   getAuthorIdentity,
   getChangedFiles,
   getCommitDiff,
+  getCommitPatch,
   getMergeBase,
   getRemotes,
   getWorkingDirectoryDiff,
@@ -4353,6 +4354,26 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     await this._refreshRepository(repository)
     return repository
+  }
+
+  /**
+   * Generate a `git format-patch` style patch for the given commits and return
+   * it as a string (empty when no patch could be generated).
+   */
+  public async _getCommitPatch(
+    repository: Repository,
+    shas: ReadonlyArray<string>
+  ): Promise<string> {
+    if (shas.length === 0) {
+      return ''
+    }
+
+    const gitStore = this.gitStoreCache.get(repository)
+    const patch = await gitStore.performFailableOperation(() =>
+      getCommitPatch(repository, shas)
+    )
+
+    return patch ?? ''
   }
 
   /**

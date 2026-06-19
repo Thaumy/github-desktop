@@ -127,6 +127,9 @@ interface ICommitListProps {
   /** Callback to fire to cherry picking the commit  */
   readonly onCherryPick?: (commits: ReadonlyArray<CommitOneLine>) => void
 
+  /** Callback to fire to copy the patch of the given commits to the clipboard */
+  readonly onCopyCommitPatch?: (commits: ReadonlyArray<CommitOneLine>) => void
+
   /** Callback to fire to start reordering commits with the keyboard */
   readonly onKeyboardReorder?: (toReorder: ReadonlyArray<Commit>) => void
 
@@ -851,6 +854,11 @@ export class CommitList extends React.Component<
         action: () => clipboard.writeText(commit.sha),
       },
       {
+        label: __DARWIN__ ? 'Copy Git Patch' : 'Copy git patch',
+        action: () => this.props.onCopyCommitPatch?.([commit]),
+        enabled: this.props.onCopyCommitPatch !== undefined,
+      },
+      {
         label: __DARWIN__ ? darwinTagsLabel : windowTagsLabel,
         action: () => clipboard.writeText(commit.tags.join(' ')),
         enabled: commit.tags.length > 0,
@@ -948,6 +956,14 @@ export class CommitList extends React.Component<
           : `Reorder ${count} commits…`,
         action: () => this.props.onKeyboardReorder?.(this.selectedCommits),
         enabled: this.canReorder(),
+      },
+      { type: 'separator' },
+      {
+        label: __DARWIN__
+          ? `Copy Git Patch of ${count} Commits`
+          : `Copy git patch of ${count} commits`,
+        action: () => this.props.onCopyCommitPatch?.(this.selectedCommits),
+        enabled: this.props.onCopyCommitPatch !== undefined,
       },
     ]
   }
