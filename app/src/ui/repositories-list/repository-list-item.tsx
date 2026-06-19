@@ -65,10 +65,7 @@ export class RepositoryListItem extends React.Component<
 
         <div className={classNames(classNameList)}>
           {prefix ? <span className="prefix">{prefix}</span> : null}
-          <HighlightText
-            text={alias ?? repository.name}
-            highlight={this.props.matches.title}
-          />
+          {this.renderName(alias ?? repository.name, alias !== null)}
         </div>
 
         {repository instanceof Repository &&
@@ -77,6 +74,32 @@ export class RepositoryListItem extends React.Component<
             hasChanges: hasChanges,
           })}
       </div>
+    )
+  }
+
+  private renderName(name: string, isAlias: boolean) {
+    const matches = this.props.matches.title
+
+    const atIndex = isAlias ? name.lastIndexOf('@') : -1
+    if (atIndex <= 0 || atIndex >= name.length - 1) {
+      return <HighlightText text={name} highlight={matches} />
+    }
+
+    const base = name.slice(0, atIndex)
+    const postfix = name.slice(atIndex + 1)
+
+    const baseMatches = matches.filter(i => i < atIndex)
+    const postfixMatches = matches
+      .filter(i => i > atIndex)
+      .map(i => i - (atIndex + 1))
+
+    return (
+      <>
+        <HighlightText text={base} highlight={baseMatches} />
+        <span className="alias-postfix">
+          @<HighlightText text={postfix} highlight={postfixMatches} />
+        </span>
+      </>
     )
   }
 

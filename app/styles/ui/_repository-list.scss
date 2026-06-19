@@ -50,6 +50,14 @@
         background-color: inherit;
         color: currentColor;
       }
+
+      .alias-postfix {
+        color: var(--repo-alias-postfix-color);
+
+        > span {
+          font-weight: bold;
+        }
+      }
     }
 
     .alias {
@@ -142,6 +150,10 @@
   }
 
   &.focus-within {
+    .list-item.selected .repository-list-item .name .alias-postfix {
+      color: var(--text-color);
+    }
+
     /** Ahead/behind badge colors when list item is selected and focused */
     .list-item.selected {
       .repository-list-item,
