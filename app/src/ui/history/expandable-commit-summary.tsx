@@ -384,15 +384,17 @@ export class ExpandableCommitSummary extends React.Component<
     if (user.name) {
       return (
         <>
-          {user.name}
-          {' <'}
-          {user.email}
-          {'>'}
+          {user.name}{' '}
+          <span className="email">
+            {'<'}
+            {user.email}
+            {'>'}
+          </span>
         </>
       )
     }
 
-    return user.email
+    return <span className="email">{user.email}</span>
   }
 
   private renderAuthorList = () => {
