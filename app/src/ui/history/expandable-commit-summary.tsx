@@ -526,10 +526,17 @@ export class ExpandableCommitSummary extends React.Component<
       expanded: this.props.isExpanded,
     })
 
+    const hasDescription =
+      this.state.body.length > 0 && this.props.selectedCommits.length === 1
+
     return (
       <div id="expandable-commit-summary" className={className}>
         {this.renderSummary()}
-        <div className="beneath-summary">
+        <div
+          className={classNames('beneath-summary', {
+            'has-description': hasDescription,
+          })}
+        >
           {this.renderDescription()}
           {this.renderMetaItems()}
         </div>
