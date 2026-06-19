@@ -459,10 +459,6 @@ $overlay-background-color: rgba(0, 0, 0, 0.4);
   --syntax-header-color: #0000ff;
   --syntax-quote-color: #1a7e31;
 
-  // Note that this duration *must* match the `UndoCommitAnimationTimeout`
-  // specified in `changes/index.tsx`.
-  --undo-animation-duration: 500ms;
-
   // Colors for form errors
   --error-color: #{$red};
   --form-error-background: #{$red-100};

@@ -14,14 +14,12 @@ import { Dispatcher } from '../dispatcher'
 import { IssuesStore, GitHubUserStore } from '../../lib/stores'
 import { CommitIdentity } from '../../models/commit-identity'
 import { Commit, ICommitContext } from '../../models/commit'
-import { UndoCommit } from './undo-commit'
 import {
   buildAutocompletionProviders,
   IAutocompletionProvider,
 } from '../autocompletion'
 import { ClickSource } from '../lib/list'
 import { WorkingDirectoryFileChange } from '../../models/status'
-import { TransitionGroup, CSSTransition } from 'react-transition-group'
 import { openFile } from '../lib/open-file'
 import { Account } from '../../models/account'
 import { PopupType } from '../../models/popup'
@@ -33,14 +31,6 @@ import { IAheadBehind } from '../../models/branch'
 import { Emoji } from '../../lib/emoji'
 import { FilterChangesList } from './filter-changes-list'
 import { HookProgress } from '../../lib/git'
-
-/**
- * The timeout for the animation of the enter/leave animation for Undo.
- *
- * Note that this *must* match the duration specified for the `undo` transitions
- * in `_changes-list.scss`.
- */
-const UndoCommitAnimationTimeout = 500
 
 interface IChangesSidebarProps {
   readonly repository: Repository
@@ -341,56 +331,6 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
     }
   }
 
-  private onUndo = () => {
-    const commit = this.props.mostRecentLocalCommit
-
-    if (commit && commit.tags.length === 0) {
-      this.props.dispatcher.undoCommit(this.props.repository, commit)
-    }
-  }
-
-  private renderMostRecentLocalCommit() {
-    const commit = this.props.mostRecentLocalCommit
-    let child: JSX.Element | null = null
-
-    // We don't allow undoing commits that have tags associated to them, since then
-    // the commit won't be completely deleted because the tag will still point to it.
-    // Also, don't allow undoing commits while the user is amending the last one.
-    if (
-      commit &&
-      commit.tags.length === 0 &&
-      this.props.commitToAmend === null
-    ) {
-      child = (
-        <CSSTransition
-          classNames="undo"
-          appear={true}
-          timeout={UndoCommitAnimationTimeout}
-        >
-          <UndoCommit
-            isPushPullFetchInProgress={this.props.isPushPullFetchInProgress}
-            commit={commit}
-            onUndo={this.onUndo}
-            emoji={this.props.emoji}
-            isCommitting={this.props.isCommitting}
-          />
-        </CSSTransition>
-      )
-    }
-
-    return <TransitionGroup>{child}</TransitionGroup>
-  }
-
-  private renderUndoCommit = (
-    rebaseConflictState: RebaseConflictState | null
-  ): JSX.Element | null => {
-    if (rebaseConflictState !== null) {
-      return null
-    }
-
-    return this.renderMostRecentLocalCommit()
-  }
-
   public focus() {
     this.changesListRef.current?.focus()
   }
@@ -490,7 +430,6 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
           allowEmptyCommit={this.props.allowEmptyCommit}
           onUpdateCommitOptions={this.props.onUpdateCommitOptions}
         />
-        {this.renderUndoCommit(rebaseConflictState)}
       </div>
     )
   }

@@ -231,29 +231,6 @@
   }
 }
 
-.undo-enter {
-  max-height: 0;
-  overflow: hidden;
-}
-
-.undo-enter.undo-enter-active {
-  // It doesn't really matter what `maxHeight` we set here so long as it's
-  // greater than or equal to the height that `UndoCommit` will want.
-  max-height: 200px;
-
-  transition: max-height var(--undo-animation-duration) ease-in;
-}
-
-.undo-exit {
-  max-height: 200px;
-}
-
-.undo-exit.undo-exit-active {
-  max-height: 0;
-
-  transition: max-height var(--undo-animation-duration) ease-out;
-}
-
 .hidden-changes-warning {
   background-color: var(--file-warning-background-color);
   padding: var(--spacing-half) var(--spacing);
