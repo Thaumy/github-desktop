@@ -441,10 +441,19 @@ export class ExpandableCommitSummary extends React.Component<
 
     const { shortSha, sha } = selectedCommits[0]
 
+    const ref = isExpanded ? (
+      <>
+        <span className="short-sha">{shortSha}</span>
+        <span className="sha-rest">{sha.slice(shortSha.length)}</span>
+      </>
+    ) : (
+      shortSha
+    )
+
     return (
       <div className="ecs-meta-item commit-ref">
         <Octicon symbol={octicons.gitCommit} />
-        <div className="ref selectable">{isExpanded ? sha : shortSha}</div>
+        <div className="ref selectable">{ref}</div>
         <CopyButton ariaLabel="Copy the full SHA" copyContent={sha} />
       </div>
     )
