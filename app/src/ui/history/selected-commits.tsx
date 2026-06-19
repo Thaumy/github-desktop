@@ -108,7 +108,7 @@ export class SelectedCommits extends React.Component<
     super(props)
 
     this.state = {
-      isExpanded: false,
+      isExpanded: true,
     }
   }
 
@@ -124,13 +124,13 @@ export class SelectedCommits extends React.Component<
   }
 
   public componentWillUpdate(nextProps: ISelectedCommitsProps) {
-    // reset isExpanded if we're switching commits.
+    // keep the commit summary expanded by default when switching commits.
     const currentValue = this.props.selectedCommits.map(c => c.sha).join('')
     const nextValue = nextProps.selectedCommits.map(c => c.sha).join('')
 
     if (currentValue !== nextValue) {
-      if (this.state.isExpanded) {
-        this.setState({ isExpanded: false })
+      if (!this.state.isExpanded) {
+        this.setState({ isExpanded: true })
       }
     }
   }
