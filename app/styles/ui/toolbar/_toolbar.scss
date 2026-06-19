@@ -83,7 +83,8 @@
 .ahead-behind {
   display: flex;
 
-  background: var(--toolbar-badge-background-color);
+  background: $blue;
+  color: $white;
 
   // Perfectly round semi circle ends with real tight
   // padding on either side. Now in two flavors!
