@@ -525,8 +525,10 @@ export class ExpandableCommitSummary extends React.Component<
     return (
       <div className="ecs-meta">
         {this.renderAuthors()}
-        {this.renderCommitRef()}
-        {this.renderLinesChanged()}
+        <div className="ecs-meta-row">
+          {this.renderCommitRef()}
+          {this.renderLinesChanged()}
+        </div>
         {this.renderTags()}
       </div>
     )
