@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { Repository } from '../../models/repository'
-import { Octicon, iconForRepository } from '../octicons'
+import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 import { Repositoryish } from './group-repositories'
 import { HighlightText } from '../lib/highlight-text'
@@ -62,11 +62,6 @@ export class RepositoryListItem extends React.Component<
         >
           {this.renderTooltip()}
         </Tooltip>
-
-        <Octicon
-          className="icon-for-repository"
-          symbol={iconForRepository(repository)}
-        />
 
         <div className={classNames(classNameList)}>
           {prefix ? <span className="prefix">{prefix}</span> : null}

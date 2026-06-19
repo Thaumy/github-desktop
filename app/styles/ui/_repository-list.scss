@@ -16,9 +16,7 @@
   /**
    * Container for repository list items in the sidebar
    *
-   * Contains two elements, one 16x16 <svg class='octicon'> holding an octicon
-   * representing the repository type (local, private, public, fork)
-   * and one <div class='name'> holding the repository name.
+   * Contains one <div class='name'> holding the repository name.
    */
   .repository-list-item {
     padding: 0 var(--spacing);
@@ -33,17 +31,6 @@
     // Necessary to limit the width of the repository
     // name and truncate accordingly
     width: 100%;
-
-    .icon-for-repository {
-      // Some room between the icon and repository name
-      margin-right: var(--spacing-half);
-
-      // Always let the octicon dictate the amount of space it needs
-      flex-shrink: 0;
-
-      // Force the octicon width
-      width: 16px;
-    }
 
     .name {
       // Long repository names truncate and ellipse
