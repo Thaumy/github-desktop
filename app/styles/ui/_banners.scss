@@ -8,6 +8,8 @@
   $banner-height: 30px;
   height: $banner-height;
   position: relative;
+  background-color: var(--banner-warning-background);
+  color: var(--banner-warning-text-color);
   display: flex;
   flex-wrap: nowrap;
   overflow: hidden;
