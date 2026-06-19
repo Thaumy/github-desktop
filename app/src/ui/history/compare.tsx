@@ -84,6 +84,7 @@ export class CompareSidebar extends React.Component<
 > {
   private textbox: TextBox | null = null
   private readonly loadChangedFilesScheduler = new ThrottledScheduler(200)
+  private readonly filterCommitsScheduler = new ThrottledScheduler(200)
   private branchList: BranchList | null = null
   private commitListRef = React.createRef<CommitList>()
   private loadingMoreCommitsPromise: Promise<void> | null = null
@@ -161,23 +162,42 @@ export class CompareSidebar extends React.Component<
 
   public render() {
     const { branches, filterText, showBranchList } = this.props.compareState
-    const placeholderText = getPlaceholderText(this.props.compareState)
+    const commitFilterPlaceholder = __DARWIN__
+      ? 'Search Commit'
+      : 'Search commit'
+    const placeholderText = showBranchList
+      ? getPlaceholderText(this.props.compareState)
+      : commitFilterPlaceholder
 
     return (
       <div id="compare-view" role="tabpanel" aria-labelledby="history-tab">
         <div className="compare-form">
           <FancyTextBox
-            ariaLabel="Branch filter"
-            symbol={octicons.gitBranch}
+            ariaLabel={
+              showBranchList ? 'Branch filter' : 'Filter commits by keyword'
+            }
+            symbol={showBranchList ? octicons.gitBranch : octicons.search}
             displayClearButton={true}
             placeholder={placeholderText}
-            onFocus={this.onTextBoxFocused}
+            onFocus={showBranchList ? this.onTextBoxFocused : undefined}
             value={filterText}
-            disabled={!branches.some(b => !b.isDesktopForkRemoteBranch)}
+            disabled={
+              showBranchList && !branches.some(b => !b.isDesktopForkRemoteBranch)
+            }
             onRef={this.onTextBoxRef}
-            onValueChanged={this.onBranchFilterTextChanged}
-            onKeyDown={this.onBranchFilterKeyDown}
-            onSearchCleared={this.handleEscape}
+            onValueChanged={
+              showBranchList
+                ? this.onBranchFilterTextChanged
+                : this.onCommitFilterTextChanged
+            }
+            onKeyDown={
+              showBranchList
+                ? this.onBranchFilterKeyDown
+                : this.onCommitFilterKeyDown
+            }
+            onSearchCleared={
+              showBranchList ? this.handleEscape : this.clearCommitFilter
+            }
           />
         </div>
 
@@ -220,7 +240,9 @@ export class CompareSidebar extends React.Component<
 
     let emptyListMessage: string | JSX.Element
     if (formState.kind === HistoryTabMode.History) {
-      emptyListMessage = 'No history'
+      const filter = this.props.compareState.filterText.trim()
+      emptyListMessage =
+        filter.length > 0 ? `No commits match “${filter}”` : 'No history'
     } else {
       const currentlyComparedBranchName = formState.comparisonBranch.name
 
@@ -496,6 +518,40 @@ export class CompareSidebar extends React.Component<
     if (this.textbox) {
       this.textbox.blur()
     }
+  }
+
+  private onCommitFilterTextChanged = (filterText: string) => {
+    this.props.dispatcher.updateCompareForm(this.props.repository, {
+      filterText,
+    })
+
+    this.filterCommitsScheduler.queue(() => {
+      this.props.dispatcher.searchHistoryCommits(
+        this.props.repository,
+        filterText
+      )
+    })
+  }
+
+  private onCommitFilterKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === 'Escape') {
+      this.clearCommitFilter()
+      if (this.textbox) {
+        this.textbox.blur()
+      }
+    }
+  }
+
+  private clearCommitFilter = () => {
+    this.filterCommitsScheduler.clear()
+
+    this.props.dispatcher.updateCompareForm(this.props.repository, {
+      filterText: '',
+    })
+
+    this.props.dispatcher.searchHistoryCommits(this.props.repository, '')
   }
 
   private onCommitsSelected = (

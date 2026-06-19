@@ -1779,16 +1779,21 @@ export class AppStore extends TypedBaseStore<IAppState> {
     const gitStore = this.gitStoreCache.get(repository)
 
     const state = this.repositoryStateCache.get(repository)
-    const { formState } = state.compareState
+    const { formState, filterText } = state.compareState
     if (formState.kind === HistoryTabMode.History) {
       const commits = state.compareState.commitSHAs
 
       const tip = state.branchesState.tip
 
+      const additionalArgs = this.getCommitFilterArgs(filterText)
+
       let newCommits: string[] | null = null
 
-      // Prioritize pulling from the local commits if the last one we pulled is local
+      // Prioritize pulling from the local commits if the last one we pulled is
+      // local. This is skipped while filtering commits by keyword since local
+      // commits aren't part of the filtered result.
       if (
+        additionalArgs.length === 0 &&
         commits.length > 0 &&
         tip.kind === TipState.Valid &&
         gitStore.localCommitSHAs.includes(commits[commits.length - 1])
@@ -1797,7 +1802,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
       }
 
       if (!newCommits || newCommits.length === 0) {
-        newCommits = await gitStore.loadCommitBatch('HEAD', commits.length)
+        newCommits = await gitStore.loadCommitBatch(
+          'HEAD',
+          commits.length,
+          additionalArgs
+        )
       }
 
       if (!newCommits) {
@@ -1809,6 +1818,47 @@ export class AppStore extends TypedBaseStore<IAppState> {
       }))
       this.emitUpdate()
     }
+  }
+
+  /**
+   * Build the `git log` arguments used to filter the history commit list by a
+   * keyword. The keyword is matched (case-insensitively, as a fixed string)
+   * against the commit message. An empty keyword means no filtering.
+   */
+  private getCommitFilterArgs(filterText: string): ReadonlyArray<string> {
+    const keyword = filterText.trim()
+    return keyword.length === 0 ? [] : ['-i', '-F', `--grep=${keyword}`]
+  }
+
+  /**
+   * Reload the history commit list, optionally filtering commits whose message
+   * matches the given keyword (using `git log --grep`). Pass an empty string to
+   * show the full history.
+   *
+   * This shouldn't be called directly. See `Dispatcher`.
+   */
+  public async _searchHistoryCommits(
+    repository: Repository,
+    filterText: string
+  ): Promise<void> {
+    const gitStore = this.gitStoreCache.get(repository)
+    const additionalArgs = this.getCommitFilterArgs(filterText)
+
+    const commits = await gitStore.loadCommitBatch('HEAD', 0, additionalArgs)
+
+    if (commits === null) {
+      return
+    }
+
+    this.repositoryStateCache.updateCompareState(repository, () => ({
+      formState: { kind: HistoryTabMode.History },
+      commitSHAs: commits,
+      showBranchList: false,
+    }))
+
+    this.updateOrSelectFirstCommit(repository, commits)
+
+    return this.emitUpdate()
   }
 
   /** This shouldn't be called directly. See `Dispatcher`. */

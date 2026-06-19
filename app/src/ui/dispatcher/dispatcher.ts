@@ -243,6 +243,17 @@ export class Dispatcher {
     return this.appStore._loadNextCommitBatch(repository)
   }
 
+  /**
+   * Reload the history commit list, filtering commits whose message matches the
+   * given keyword (pass an empty string to show the full history).
+   */
+  public searchHistoryCommits(
+    repository: Repository,
+    filterText: string
+  ): Promise<void> {
+    return this.appStore._searchHistoryCommits(repository, filterText)
+  }
+
   /** Load the changed files for the current history selection. */
   public loadChangedFilesForCurrentSelection(
     repository: Repository
