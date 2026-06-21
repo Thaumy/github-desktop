@@ -45,6 +45,31 @@
     max-width: 600px;
   }
 
+  /**
+   * When there are no local changes there are no suggested actions below the
+   * header, so center the container within the panel. The text no longer needs
+   * to grow to fill the row (which pushed the illustration to the far edge),
+   * so keep it from growing and center the header to sit the icon next to the
+   * text.
+   */
+  &.no-changes {
+    justify-content: center;
+
+    .interstitial-header {
+      justify-content: center;
+
+      .text {
+        flex-grow: 0;
+
+        p {
+          color: var(--text-secondary-color);
+          text-align: right;
+          margin-right: 5px;
+        }
+      }
+    }
+  }
+
   .pull-request-action {
     .dropdown-select-button {
       .invoke-button {

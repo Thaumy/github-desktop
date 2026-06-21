@@ -577,19 +577,7 @@ export class RepositoryView extends React.Component<
       if (this.props.currentTutorialStep !== TutorialStep.NotApplicable) {
         return this.renderTutorialPane()
       } else {
-        return (
-          <NoChanges
-            key={this.props.repository.id}
-            appMenu={this.props.appMenu}
-            repository={this.props.repository}
-            repositoryState={this.props.state}
-            isExternalEditorAvailable={this.props.isExternalEditorAvailable}
-            dispatcher={this.props.dispatcher}
-            pullRequestSuggestedNextAction={
-              this.props.pullRequestSuggestedNextAction
-            }
-          />
-        )
+        return <NoChanges key={this.props.repository.id} />
       }
     } else {
       if (selectedFileIDs.length === 0) {
