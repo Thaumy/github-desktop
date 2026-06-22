@@ -231,13 +231,6 @@ export class PullRequestFilesChanged extends React.Component<
     )
   }
 
-  private onRowDoubleClick = (row: number) => {
-    const files = this.props.files
-    const file = files[row]
-
-    this.props.onOpenInExternalEditor(file.path)
-  }
-
   private renderHeader() {
     const { hideWhitespaceInDiff } = this.props
     const { showSideBySideDiff } = this.state
@@ -276,7 +269,6 @@ export class PullRequestFilesChanged extends React.Component<
           selectedFile={selectedFile}
           availableWidth={clamp(fileListWidth)}
           onContextMenu={this.onFileContextMenu}
-          onRowDoubleClick={this.onRowDoubleClick}
         />
       </Resizable>
     )

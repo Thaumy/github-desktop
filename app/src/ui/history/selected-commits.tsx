@@ -116,13 +116,6 @@ export class SelectedCommits extends React.Component<
     this.props.dispatcher.changeFileSelection(this.props.repository, file)
   }
 
-  private onRowDoubleClick = (row: number) => {
-    const files = this.props.changesetData.files
-    const file = files[row]
-
-    this.props.onOpenInExternalEditor(file.path)
-  }
-
   public componentWillUpdate(nextProps: ISelectedCommitsProps) {
     // keep the commit summary expanded by default when switching commits.
     const currentValue = this.props.selectedCommits.map(c => c.sha).join('')
@@ -268,7 +261,6 @@ export class SelectedCommits extends React.Component<
           selectedFile={this.props.selectedFile}
           availableWidth={availableWidth}
           onContextMenu={this.onContextMenu}
-          onRowDoubleClick={this.onRowDoubleClick}
         />
       </>
     )

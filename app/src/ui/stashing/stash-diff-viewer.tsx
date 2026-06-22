@@ -71,13 +71,6 @@ export class StashDiffViewer extends React.PureComponent<IStashDiffViewerProps> 
   private onSelectedFileChanged = (file: CommittedFileChange) =>
     this.props.dispatcher.selectStashedFile(this.props.repository, file)
 
-  private onRowDoubleClick = (row: number) => {
-    const files = this.getFiles()
-    const file = files[row]
-
-    this.props.onOpenInExternalEditor(file.path)
-  }
-
   private onResize = (width: number) =>
     this.props.dispatcher.setStashedFilesWidth(width)
 
@@ -149,7 +142,6 @@ export class StashDiffViewer extends React.PureComponent<IStashDiffViewerProps> 
               onSelectedFileChanged={this.onSelectedFileChanged}
               selectedFile={selectedStashedFile}
               availableWidth={availableWidth}
-              onRowDoubleClick={this.onRowDoubleClick}
             />
           </Resizable>
           {diffComponent}

@@ -1131,10 +1131,6 @@ export class FilterChangesList extends React.Component<
     )
   }
 
-  private onChangedFileDoubleClick = (item: IChangesListItem) => {
-    this.props.onOpenItemInExternalEditor(item.change.path)
-  }
-
   private onItemKeyDown = (
     _item: IChangesListItem,
     event: React.KeyboardEvent<HTMLDivElement>
@@ -1349,7 +1345,6 @@ export class FilterChangesList extends React.Component<
             selectionMode="multi"
             renderItem={this.renderChangedFile}
             onItemClick={this.onChangedFileClick}
-            onItemDoubleClick={this.onChangedFileDoubleClick}
             onItemKeyboardFocus={this.onChangedFileFocus}
             onItemBlur={this.onChangedFileBlur}
             onScroll={this.onScroll}
