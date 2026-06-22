@@ -10,6 +10,8 @@ import { FilesChangedBadge } from './changes/files-changed-badge'
 import { SelectedCommits, CompareSidebar } from './history'
 import { Resizable } from './resizable'
 import { TabBar } from './tab-bar'
+import { Octicon } from './octicons'
+import * as octicons from './octicons/octicons.generated'
 import {
   IRepositoryState,
   RepositorySectionTab,
@@ -152,6 +154,7 @@ interface IRepositoryViewProps {
 interface IRepositoryViewState {
   readonly changesListScrollTop: number
   readonly compareListScrollTop: number
+  readonly isSidebarCollapsed: boolean
 }
 
 const enum Tab {
@@ -182,6 +185,7 @@ export class RepositoryView extends React.Component<
     this.state = {
       changesListScrollTop: 0,
       compareListScrollTop: 0,
+      isSidebarCollapsed: false,
     }
   }
 
@@ -423,10 +427,46 @@ export class RepositoryView extends React.Component<
           onResize={this.handleSidebarResize}
           description="Repository sidebar"
         >
-          {this.renderTabs()}
+          <div className="repository-sidebar-header">
+            {this.renderTabs()}
+            {this.renderSidebarToggleButton()}
+          </div>
           {this.renderSidebarContents()}
         </Resizable>
       </FocusContainer>
+    )
+  }
+
+  private onToggleSidebar = () => {
+    this.setState(prevState => ({
+      isSidebarCollapsed: !prevState.isSidebarCollapsed,
+    }))
+  }
+
+  private renderSidebarToggleButton(): JSX.Element {
+    const collapsed = this.state.isSidebarCollapsed
+
+    return (
+      <button
+        type="button"
+        className="sidebar-toggle-button"
+        onClick={this.onToggleSidebar}
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        <Octicon
+          symbol={collapsed ? octicons.sidebarCollapse : octicons.sidebarExpand}
+        />
+      </button>
+    )
+  }
+
+  private renderCollapsedSidebar(): JSX.Element {
+    return (
+      <div className="repository-sidebar-collapsed">
+        {this.renderSidebarToggleButton()}
+      </div>
     )
   }
 
@@ -640,7 +680,9 @@ export class RepositoryView extends React.Component<
   public render() {
     return (
       <UiView id="repository">
-        {this.renderSidebar()}
+        {this.state.isSidebarCollapsed
+          ? this.renderCollapsedSidebar()
+          : this.renderSidebar()}
         {this.renderContent()}
         {this.maybeRenderTutorialPanel()}
       </UiView>

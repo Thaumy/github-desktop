@@ -33,4 +33,50 @@
       overflow-y: auto;
     }
   }
+
+  // Row holding the Changes/History tabs and the collapse button.
+  .repository-sidebar-header {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+
+    .tab-bar {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .sidebar-toggle-button {
+      border-bottom: 1px solid var(--box-border-color);
+    }
+  }
+
+  // The narrow rail shown in place of the sidebar when it's collapsed.
+  .repository-sidebar-collapsed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: var(--spacing-half);
+    border-right: 1px solid var(--box-border-color);
+
+    .sidebar-toggle-button {
+      padding: var(--spacing-half);
+    }
+  }
+
+  .sidebar-toggle-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0 var(--spacing);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary-color);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-color);
+    }
+  }
 }
