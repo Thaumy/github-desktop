@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { PathLabel } from '../lib/path-label'
 import { AppFileStatus } from '../../models/status'
-import { IDiff, DiffType } from '../../models/diff'
+import { IDiff, DiffType, DiffLineType } from '../../models/diff'
 import { Octicon, iconForStatus } from '../octicons'
 import { mapStatus } from '../../lib/status'
 import { DiffOptions } from './diff-options'
@@ -27,6 +27,36 @@ interface IDiffHeaderProps {
   readonly onDiffOptionsOpened: () => void
 }
 
+/**
+ * Counts the number of added and deleted lines in a text diff. Returns null for
+ * non-text diffs (image, binary, submodule, etc.) where line counts don't apply.
+ */
+function getDiffLineChanges(
+  diff: IDiff | null
+): { readonly added: number; readonly deleted: number } | null {
+  if (
+    diff === null ||
+    (diff.kind !== DiffType.Text && diff.kind !== DiffType.LargeText)
+  ) {
+    return null
+  }
+
+  let added = 0
+  let deleted = 0
+
+  for (const hunk of diff.hunks) {
+    for (const line of hunk.lines) {
+      if (line.type === DiffLineType.Add) {
+        added += 1
+      } else if (line.type === DiffLineType.Delete) {
+        deleted += 1
+      }
+    }
+  }
+
+  return { added, deleted }
+}
+
 /** Displays information about a file */
 export class DiffHeader extends React.Component<IDiffHeaderProps, {}> {
   public render() {
@@ -37,6 +67,8 @@ export class DiffHeader extends React.Component<IDiffHeaderProps, {}> {
       <div className="header">
         <PathLabel path={this.props.path} status={this.props.status} />
 
+        {this.renderLineChanges()}
+
         {this.renderDiffOptions()}
 
         <Octicon
@@ -44,6 +76,21 @@ export class DiffHeader extends React.Component<IDiffHeaderProps, {}> {
           className={'status status-' + fileStatus.toLowerCase()}
           title={fileStatus}
         />
+      </div>
+    )
+  }
+
+  private renderLineChanges() {
+    const changes = getDiffLineChanges(this.props.diff)
+
+    if (changes === null || (changes.added === 0 && changes.deleted === 0)) {
+      return null
+    }
+
+    return (
+      <div className="diff-line-changes">
+        <span className="lines-added">+{changes.added}</span>
+        <span className="lines-deleted">-{changes.deleted}</span>
       </div>
     )
   }

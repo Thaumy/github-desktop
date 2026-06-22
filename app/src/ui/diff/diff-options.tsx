@@ -101,7 +101,6 @@ export class DiffOptions extends React.Component<
           <span ref={this.gearIconRef}>
             <Octicon symbol={octicons.gear} />
           </span>
-          <Octicon symbol={octicons.triangleDown} />
         </button>
         {this.state.isPopoverOpen && this.renderPopover()}
       </div>

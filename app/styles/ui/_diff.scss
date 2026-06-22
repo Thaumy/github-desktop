@@ -919,6 +919,23 @@
 
     @include octicon-status;
 
+    .diff-line-changes {
+      flex-shrink: 0;
+      margin-right: var(--spacing-half);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      font-size: var(--font-size-sm);
+
+      .lines-added {
+        color: var(--color-new);
+      }
+
+      .lines-deleted {
+        color: var(--color-deleted);
+        margin-left: var(--spacing-half);
+      }
+    }
+
     .diff-options-component {
       margin-right: var(--spacing-half);
       flex-shrink: 0;
