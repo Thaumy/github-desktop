@@ -154,8 +154,7 @@ export function shouldMakeDelta() {
  * Path to the directory containing all icon assets for the current release channel.
  */
 export function getIconDirectory() {
-  const devOrProd = getChannel() === 'development' ? 'dev' : 'prod'
-  return join(projectRoot, 'app', 'static', 'logos', devOrProd)
+  return join(projectRoot, 'app', 'static', 'logos', 'dev')
 }
 
 export function getChannelFromReleaseBranch(): string {
