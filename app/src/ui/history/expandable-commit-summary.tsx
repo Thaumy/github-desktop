@@ -519,7 +519,17 @@ export class ExpandableCommitSummary extends React.Component<
 
   private renderMetaItems = () => {
     if (this.props.selectedCommits.length > 1) {
-      return null
+      const linesChanged = this.renderLinesChanged()
+
+      if (linesChanged === null) {
+        return null
+      }
+
+      return (
+        <div className="ecs-meta">
+          <div className="ecs-meta-row">{linesChanged}</div>
+        </div>
+      )
     }
 
     return (
@@ -559,13 +569,10 @@ export class ExpandableCommitSummary extends React.Component<
   }
 
   private renderLinesChanged() {
-    const { changesetData, selectedCommits } = this.props
+    const { changesetData } = this.props
     const { linesAdded, linesDeleted } = changesetData
 
-    if (
-      (linesAdded === 0 && linesDeleted === 0) ||
-      selectedCommits.length > 1
-    ) {
+    if (linesAdded === 0 && linesDeleted === 0) {
       return null
     }
 
