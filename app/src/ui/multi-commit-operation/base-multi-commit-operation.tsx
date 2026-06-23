@@ -207,7 +207,7 @@ export abstract class BaseMultiCommitOperation extends React.Component<IMultiCom
           <ProgressDialog
             progress={state.progress}
             emoji={emoji}
-            operation={state.operationDetail.kind}
+            operation={step.operation ?? state.operationDetail.kind}
           />
         )
       case MultiCommitOperationStepKind.ShowConflicts: {

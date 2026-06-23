@@ -139,6 +139,7 @@ export type WarnForcePushStep = {
 
 export type ShowProgressStep = {
   readonly kind: MultiCommitOperationStepKind.ShowProgress
+  readonly operation?: string
 }
 
 export type ShowConflictsStep = {

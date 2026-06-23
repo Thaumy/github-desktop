@@ -181,6 +181,8 @@ export class LocalChangesOverwrittenDialog extends React.Component<
         return 'squash'
       case RetryActionType.Reorder:
         return 'reorder'
+      case RetryActionType.Reword:
+        return 'reword'
       case RetryActionType.DiscardChanges:
         return 'discard changes'
       default:

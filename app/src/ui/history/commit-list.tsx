@@ -86,6 +86,9 @@ interface ICommitListProps {
 
   readonly onAmendCommit?: (commit: Commit, isLocalCommit: boolean) => void
 
+  /** Callback to fire to reword the message of a given commit */
+  readonly onRewordCommit?: (commit: Commit) => void
+
   /** Callback to fire to open a given commit on GitHub */
   readonly onViewCommitOnGitHub?: (sha: string) => void
 
@@ -759,6 +762,16 @@ export class CommitList extends React.Component<
       items.push({
         label: __DARWIN__ ? 'Amend Commit…' : 'Amend commit…',
         action: () => this.props.onAmendCommit?.(commit, isLocal),
+      })
+    }
+
+    if (this.props.onRewordCommit !== undefined) {
+      items.push({
+        label: __DARWIN__ ? 'Reword Commit…' : 'Reword commit…',
+        action: () => this.props.onRewordCommit?.(commit),
+        // Rewording replays the commits after the target via an interactive
+        // rebase, which can't flatten a merge commit, so disable it for those.
+        enabled: !commit.isMergeCommit,
       })
     }
 

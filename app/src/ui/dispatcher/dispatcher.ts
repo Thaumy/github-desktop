@@ -2254,6 +2254,13 @@ export class Dispatcher {
           retryAction.beforeCommit,
           retryAction.lastRetainedCommitRef
         )
+      case RetryActionType.Reword:
+        return this.reword(
+          retryAction.repository,
+          retryAction.commitToReword,
+          retryAction.lastRetainedCommitRef,
+          retryAction.commitContext
+        )
       case RetryActionType.DiscardChanges:
         return this.discardChanges(
           retryAction.repository,
@@ -3513,6 +3520,103 @@ export class Dispatcher {
       tip.branch.name,
       `${MultiCommitOperationKind.Squash.toLowerCase()} commit`
     )
+  }
+
+  /**
+   * Rewords the message of a single commit in the history.
+   *
+   * Unlike squash/reorder, this doesn't use the multi commit operation flow:
+   * rewording only changes a commit message (the tree of every replayed commit
+   * is untouched) and therefore can not realistically result in conflicts.
+   *
+   * @param commitToReword - the commit whose message should be replaced
+   * @param lastRetainedCommitRef - commit ref of the commit before the commit
+   * being reworded or null if it is the root (first in history) of the branch
+   * @param commitContext - used to build the new commit message
+   */
+  public async reword(
+    repository: Repository,
+    commitToReword: Commit,
+    lastRetainedCommitRef: string | null,
+    commitContext: ICommitContext
+  ): Promise<void> {
+    const retry: RetryAction = {
+      type: RetryActionType.Reword,
+      repository,
+      commitToReword,
+      lastRetainedCommitRef,
+      commitContext,
+    }
+
+    if (this.appStore._checkForUncommittedChanges(repository, retry)) {
+      return
+    }
+
+    const stateBefore = this.repositoryStateManager.get(repository)
+    const { tip } = stateBefore.branchesState
+
+    if (tip.kind !== TipState.Valid) {
+      log.info(`[reword] - invalid tip state - could not perform reword.`)
+      return
+    }
+
+    this.initializeMultiCommitOperation(
+      repository,
+      {
+        kind: MultiCommitOperationKind.Rebase,
+        sourceBranch: null,
+        commits: [commitToReword],
+        currentTip: tip.branch.tip.sha,
+      },
+      tip.branch,
+      [commitToReword],
+      tip.branch.tip.sha
+    )
+
+    await this.setMultiCommitOperationStep(repository, {
+      kind: MultiCommitOperationStepKind.ShowProgress,
+      operation: 'Reword',
+    })
+
+    this.showPopup({
+      type: PopupType.MultiCommitOperation,
+      repository,
+    })
+
+    const result = await this.appStore._reword(
+      repository,
+      commitToReword,
+      lastRetainedCommitRef,
+      commitContext
+    )
+
+    switch (result) {
+      case RebaseResult.CompletedWithoutError: {
+        const status = await this.appStore._loadStatus(repository)
+        if (status !== null && status.currentTip !== undefined) {
+          await this.changeCommitSelection(
+            repository,
+            [status.currentTip],
+            true
+          )
+        }
+        await this.refreshRepository(repository)
+        break
+      }
+      case RebaseResult.ConflictsEncountered:
+        // Rewording shouldn't produce conflicts because the tree of every
+        // replayed commit is unchanged. If it somehow does, abort so we don't
+        // leave the repository in the middle of a rebase.
+        log.error('[reword] - unexpected conflicts encountered, aborting.')
+        await this.abortRebase(repository)
+        break
+      default:
+        // The underlying error (if any) is surfaced by performFailableOperation.
+        await this.refreshRepository(repository)
+    }
+
+    this.closePopup(PopupType.MultiCommitOperation)
+    this.endMultiCommitOperation(repository)
   }
 
   public initializeMultiCommitOperation(

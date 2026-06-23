@@ -286,6 +286,11 @@ export class CompareSidebar extends React.Component<
             : undefined
         }
         onAmendCommit={this.props.onAmendCommit}
+        onRewordCommit={
+          formState.kind === HistoryTabMode.History
+            ? this.onRewordCommit
+            : undefined
+        }
         onCommitsSelected={this.onCommitsSelected}
         onScroll={this.onScroll}
         onCreateBranch={this.onCreateBranch}
@@ -789,6 +794,57 @@ export class CompareSidebar extends React.Component<
           this.props.repository,
           toSquashSansSquashOnto,
           squashOnto,
+          lastRetainedCommitRef,
+          context
+        )
+        return true
+      },
+    })
+  }
+
+  private onRewordCommit = async (commit: Commit) => {
+    // Rewording replays every commit from the one being reworded up to HEAD, so
+    // the rebase is based on the reworded commit's parent (or the root if it
+    // doesn't have one).
+    const lastRetainedCommitRef =
+      commit.parentSHAs.length > 0 ? commit.parentSHAs[0] : null
+
+    if (
+      await doMergeCommitsExistAfterCommit(
+        this.props.repository,
+        lastRetainedCommitRef
+      )
+    ) {
+      defaultErrorHandler(
+        new Error(
+          `Unable to reword. Rewording replays all commits up to the one being reworded. A merge commit cannot exist among those commits.`
+        ),
+        this.props.dispatcher
+      )
+      return
+    }
+
+    const coAuthors = getUniqueCoauthorsAsAuthors([commit])
+
+    this.props.dispatcher.showPopup({
+      type: PopupType.CommitMessage,
+      repository: this.props.repository,
+      coAuthors,
+      showCoAuthoredBy: coAuthors.length > 0,
+      commitMessage: {
+        summary: commit.summary,
+        description: commit.bodyNoCoAuthors,
+        timestamp: Date.now(),
+      },
+      dialogTitle: __DARWIN__ ? 'Reword Commit' : 'Reword commit',
+      dialogButtonText: __DARWIN__ ? 'Reword Commit' : 'Reword commit',
+      prepopulateCommitSummary: true,
+      onSubmitCommitMessage: async (context: ICommitContext) => {
+        this.props.dispatcher.closePopup(PopupType.CommitMessage)
+
+        this.props.dispatcher.reword(
+          this.props.repository,
+          commit,
           lastRetainedCommitRef,
           context
         )

@@ -17,6 +17,7 @@ export enum RetryActionType {
   CreateBranchForCherryPick,
   Squash,
   Reorder,
+  Reword,
   DiscardChanges,
 }
 
@@ -79,6 +80,13 @@ export type RetryAction =
       commitsToReorder: ReadonlyArray<Commit>
       beforeCommit: Commit | null
       lastRetainedCommitRef: string | null
+    }
+  | {
+      type: RetryActionType.Reword
+      repository: Repository
+      commitToReword: Commit
+      lastRetainedCommitRef: string | null
+      commitContext: ICommitContext
     }
   | {
       type: RetryActionType.DiscardChanges

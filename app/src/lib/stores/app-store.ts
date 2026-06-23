@@ -350,6 +350,7 @@ import {
   MultiCommitOperationStepKind,
 } from '../../models/multi-commit-operation'
 import { reorder } from '../git/reorder'
+import { reword } from '../git/reword'
 import { UseWindowsOpenSSHKey } from '../ssh/ssh'
 import { isConflictsFlow } from '../multi-commit-operation'
 import { clamp } from '../clamp'
@@ -8173,6 +8174,30 @@ export class AppStore extends TypedBaseStore<IAppState> {
         repository,
         toSquash,
         squashOnto,
+        lastRetainedCommitRef,
+        commitMessage,
+        progressCallback
+      )
+    )
+
+    return result || RebaseResult.Error
+  }
+
+  /** This shouldn't be called directly. See `Dispatcher`. */
+  public async _reword(
+    repository: Repository,
+    commitToReword: Commit,
+    lastRetainedCommitRef: string | null,
+    commitContext: ICommitContext
+  ): Promise<RebaseResult> {
+    const progressCallback =
+      this.getMultiCommitOperationProgressCallBack(repository)
+    const commitMessage = await formatCommitMessage(repository, commitContext)
+    const gitStore = this.gitStoreCache.get(repository)
+    const result = await gitStore.performFailableOperation(() =>
+      reword(
+        repository,
+        commitToReword,
         lastRetainedCommitRef,
         commitMessage,
         progressCallback
