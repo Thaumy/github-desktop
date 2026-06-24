@@ -73,7 +73,7 @@ import escapeRegExp from 'lodash/escapeRegExp'
 import ReactDOM from 'react-dom'
 import { AriaLiveContainer } from '../accessibility/aria-live-container'
 
-const DefaultRowHeight = 20
+const DefaultRowHeight = 18
 
 export interface ISelection {
   /// Initial diff line number in the selection
