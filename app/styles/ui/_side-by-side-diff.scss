@@ -79,6 +79,20 @@
     background: var(--background-color);
   }
 
+  // The intra-line diff highlight is an inline background, so it normally only
+  // covers the font's glyph box (~16px for 12px JetBrains Mono) and falls short
+  // of the taller line height, leaving gaps above/below. Vertical padding on an
+  // inline element doesn't grow the line box, so we use it to extend the
+  // highlight to fill the full line height, cloning the decoration so wrapped
+  // segments fill each visual line too.
+  .cm-diff-add-inner,
+  .cm-diff-delete-inner {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
   .ReactVirtualized__Grid:focus {
     outline: none;
   }
