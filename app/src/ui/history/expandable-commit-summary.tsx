@@ -21,6 +21,8 @@ import { Avatar } from '../lib/avatar'
 import { CopyButton } from '../copy-button'
 import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
+import { RelativeTime } from '../relative-time'
+import { formatDate } from '../../lib/format-date'
 
 interface IExpandableCommitSummaryProps {
   readonly repository: Repository
@@ -47,6 +49,12 @@ interface IExpandableCommitSummaryProps {
   readonly showUnreachableCommits: (tab: UnreachableCommitsTab) => void
 
   readonly accounts: ReadonlyArray<Account>
+
+  /**
+   * Whether to render dates as absolute dates rather than relative ones. Mirrors
+   * the behavior of the commit history list so both stay in sync.
+   */
+  readonly preferAbsoluteDates: boolean
 }
 
 interface IExpandableCommitSummaryState {
@@ -459,6 +467,47 @@ export class ExpandableCommitSummary extends React.Component<
     )
   }
 
+  private renderCommitTimes = () => {
+    const { selectedCommits } = this.props
+    if (selectedCommits.length > 1) {
+      return null
+    }
+
+    const { author, committer } = selectedCommits[0]
+
+    // The author and committer dates are identical unless the commit was
+    // rebased/amended/cherry-picked. Prefer showing the author time and only
+    // surface the commit time when it actually differs.
+    const committedSeparately =
+      author.date.getTime() !== committer.date.getTime()
+
+    return (
+      <div className="ecs-meta-row commit-times">
+        <div className="ecs-meta-item authored-date">
+          <Octicon symbol={octicons.pencil} />
+          <span className="ecs-date-label">Authored</span>
+          {this.renderDate(author.date)}
+        </div>
+        {committedSeparately && (
+          <div className="ecs-meta-item committed-date">
+            <Octicon symbol={octicons.clock} />
+            <span className="ecs-date-label">Committed</span>
+            {this.renderDate(committer.date)}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  private renderDate = (date: Date) => {
+    // Match the format used by the commit history list (see CommitListItem).
+    return this.props.preferAbsoluteDates ? (
+      formatDate(date)
+    ) : (
+      <RelativeTime date={date} />
+    )
+  }
+
   private renderSummaryText = () => {
     const { selectedCommits, shasInDiff } = this.props
     const { summary } = this.state
@@ -539,6 +588,7 @@ export class ExpandableCommitSummary extends React.Component<
           {this.renderCommitRef()}
           {this.renderLinesChanged()}
         </div>
+        {this.renderCommitTimes()}
         {this.renderTags()}
       </div>
     )

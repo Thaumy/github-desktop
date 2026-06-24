@@ -153,6 +153,19 @@
           @include ellipsis;
         }
       }
+
+      &.authored-date,
+      &.committed-date {
+        .octicon {
+          flex-shrink: 0;
+          padding-right: var(--spacing-half);
+        }
+
+        .ecs-date-label {
+          padding-right: var(--spacing-half);
+          color: var(--text-secondary-color);
+        }
+      }
     }
   }
 

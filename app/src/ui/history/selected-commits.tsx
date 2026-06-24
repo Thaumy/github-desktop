@@ -91,6 +91,9 @@ interface ISelectedCommitsProps {
   readonly isContiguous: boolean
 
   readonly accounts: ReadonlyArray<Account>
+
+  /** Whether to use absolute dates (matches the commit history list). */
+  readonly preferAbsoluteDates: boolean
 }
 
 interface ISelectedCommitsState {
@@ -204,6 +207,7 @@ export class SelectedCommits extends React.Component<
         onHighlightShas={this.onHighlightShas}
         showUnreachableCommits={this.showUnreachableCommits}
         accounts={this.props.accounts}
+        preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )
   }
