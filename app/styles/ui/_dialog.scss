@@ -353,14 +353,10 @@ dialog {
   }
 
   &#app-error {
-    // Use wider dialogs for raw git errors, to make sure we can display lines
-    // up to 80 characters long without wrapping them.
+    // Use wider dialogs for raw git errors, to give the (fixed-width) git
+    // output room to breathe before it has to wrap.
     &.raw-git-error {
       max-width: 750px;
-
-      .xterm {
-        padding: var(--spacing);
-      }
     }
 
     .dialog-content {
@@ -382,6 +378,28 @@ dialog {
 
       max-height: 400px;
       overflow-y: auto;
+    }
+
+    // Keep the error popup minimal: hide the header so there's no "Error" title
+    // and no close (X) button. The title is still rendered (just hidden) so it
+    // remains the dialog's accessible name via aria-labelledby.
+    .dialog-header {
+      display: none;
+    }
+
+    // Center the lone "Close" button instead of aligning it to the right, and
+    // tighten the space above and below it.
+    .dialog-footer {
+      padding-top: var(--spacing);
+      padding-bottom: var(--spacing);
+
+      .button-group {
+        justify-content: center;
+      }
+
+      button {
+        margin-right: 0;
+      }
     }
   }
 
