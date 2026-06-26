@@ -53,6 +53,11 @@
         width: 100%;
       }
     }
+    &.repository-toolbar-button {
+      .text {
+        margin-left: var(--spacing-half);
+      }
+    }
     &.revert-progress {
       width: 230px;
 
