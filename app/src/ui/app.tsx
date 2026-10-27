@@ -362,8 +362,6 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.reportStats()
     setInterval(() => this.props.dispatcher.reportStats(), SendStatsInterval)
 
-    this.props.dispatcher.installGlobalLFSFilters(false)
-
     log.info(`launching: ${getVersion()} (${getOS()})`)
     log.info(`execPath: '${process.execPath}'`)
 
