@@ -174,7 +174,6 @@ export class CommitMessageDialog extends React.Component<
             autocompletionProviders={this.props.autocompletionProviders}
             showCoAuthoredBy={this.state.showCoAuthoredBy}
             coAuthors={this.state.coAuthors}
-            placeholder={''}
             prepopulateCommitSummary={this.props.prepopulateCommitSummary}
             key={this.props.repository.id}
             showBranchProtected={this.props.showBranchProtected}

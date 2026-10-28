@@ -117,7 +117,6 @@ interface ICommitMessageProps {
   readonly isGeneratingCommitMessage?: boolean
   readonly shouldShowGenerateCommitMessageCallOut?: boolean
   readonly commitToAmend: Commit | null
-  readonly placeholder: string
   readonly prepopulateCommitSummary: boolean
   readonly showBranchProtected: boolean
   readonly repoRulesInfo: RepoRulesInfo
@@ -463,10 +462,7 @@ export class CommitMessage extends React.Component<
       prevProps?.repoRulesInfo.commitMessagePatterns !==
         this.props.repoRulesInfo.commitMessagePatterns
     ) {
-      let summary = this.state.commitMessage.summary
-      if (!summary && !this.state.commitMessage.description) {
-        summary = this.summaryOrPlaceholder
-      }
+      const summary = this.summaryOrPlaceholder
 
       const context: ICommitContext = {
         summary,
@@ -597,10 +593,8 @@ export class CommitMessage extends React.Component<
   }
 
   private get summaryOrPlaceholder() {
-    return this.props.prepopulateCommitSummary &&
-      !this.state.commitMessage.summary
-      ? this.props.placeholder
-      : this.state.commitMessage.summary
+    const { summary } = this.state.commitMessage
+    return isEmptyOrWhitespace(summary) ? '@sq' : summary
   }
 
   private async createCommit(options?: ICreateCommitOptions) {
@@ -665,7 +659,7 @@ export class CommitMessage extends React.Component<
     return (
       (((this.props.anyFilesSelected === true ||
         this.props.allowEmptyCommit === true) &&
-        this.state.commitMessage.summary.length > 0) ||
+        this.summaryOrPlaceholder.length > 0) ||
         this.props.prepopulateCommitSummary) &&
       !this.hasRepoRuleFailure()
     )
@@ -674,7 +668,7 @@ export class CommitMessage extends React.Component<
   private canAmend(): boolean {
     return (
       this.props.commitToAmend !== null &&
-      (this.state.commitMessage.summary.length > 0 ||
+      (this.summaryOrPlaceholder.length > 0 ||
         this.props.prepopulateCommitSummary) &&
       !this.hasRepoRuleFailure()
     )
@@ -1747,12 +1741,8 @@ export class CommitMessage extends React.Component<
       ? this.COMMIT_MSG_ERROR_BTN_ID
       : undefined
 
-    const {
-      placeholder,
-      isCommitting,
-      isGeneratingCommitMessage,
-      commitSpellcheckEnabled,
-    } = this.props
+    const { isCommitting, isGeneratingCommitMessage, commitSpellcheckEnabled } =
+      this.props
 
     return (
       <div
@@ -1766,11 +1756,11 @@ export class CommitMessage extends React.Component<
           {this.renderAvatar()}
 
           <AutocompletingInput
-            required={true}
+            required={false}
             label={this.props.showInputLabels === true ? 'Summary' : undefined}
             screenReaderLabel="Commit summary"
             className={summaryInputClassName}
-            placeholder={placeholder}
+            placeholder="@sq"
             value={this.state.commitMessage.summary}
             onValueChanged={this.onSummaryChanged}
             onElementRef={this.onSummaryInputRef}
