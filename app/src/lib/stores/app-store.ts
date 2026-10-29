@@ -2886,6 +2886,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
     if (conflictState === null || multiCommitOperationState === null) {
       this.clearConflictsFlowVisuals(state)
+      if (
+        conflictState === null &&
+        multiCommitOperationState !== null &&
+        'conflictState' in multiCommitOperationState.step
+      ) {
+        // The operation was aborted or completed outside Desktop. Only clear
+        // conflict steps so status refreshes preserve setup and progress steps.
+        this.repositoryStateCache.clearMultiCommitOperationState(repository)
+      }
       return
     }
 
