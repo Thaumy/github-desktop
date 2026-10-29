@@ -229,8 +229,6 @@ import { inferLastPushForRepository } from '../infer-last-push-for-repository'
 import { updateMenuState } from '../menu-update'
 import { merge } from '../merge'
 import {
-  IMatchedGitHubRepository,
-  matchGitHubRepository,
   matchExistingRepository,
   urlMatchesRemote,
 } from '../repository-matching'
@@ -299,7 +297,6 @@ import { IStashEntry, StashedChangesLoadStates } from '../../models/stash-entry'
 import { arrayEquals } from '../equality'
 import { MenuLabelsEvent } from '../../models/menu-labels'
 import { findRemoteBranchName } from './helpers/find-branch-name'
-import { updateRemoteUrl } from './updates/update-remote-url'
 import {
   TutorialStep,
   orderedTutorialSteps,
@@ -614,7 +611,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
     | ((repository: Repository | null) => void)
     | null = null
 
-  private selectedCloneRepositoryTab = CloneRepositoryTab.DotCom
+  private selectedCloneRepositoryTab = CloneRepositoryTab.Generic
 
   private selectedBranchesTab = BranchesTab.Branches
   private selectedTheme = ApplicationTheme.System
@@ -4021,6 +4018,32 @@ export class AppStore extends TypedBaseStore<IAppState> {
 
   /** This shouldn't be called directly. See `Dispatcher`. */
   public async _showPopup(popup: Popup): Promise<void> {
+    switch (popup.type) {
+      case PopupType.SignIn:
+      case PopupType.PublishRepository:
+      case PopupType.CreateTutorialRepository:
+      case PopupType.ConfirmExitTutorial:
+      case PopupType.PushRejectedDueToMissingWorkflowScope:
+      case PopupType.SAMLReauthRequired:
+      case PopupType.CreateFork:
+      case PopupType.ChooseForkSettings:
+      case PopupType.InvalidatedToken:
+      case PopupType.DeletePullRequest:
+      case PopupType.PullRequestChecksFailed:
+      case PopupType.CICheckRunRerun:
+      case PopupType.PullRequestReview:
+      case PopupType.StartPullRequest:
+      case PopupType.PullRequestComment:
+      case PopupType.PushProtectionError:
+      case PopupType.BypassPushProtection:
+      case PopupType.GenerateCommitMessageOverrideWarning:
+      case PopupType.GenerateCommitMessageDisclaimer:
+      case PopupType.EditCopilotBYOKProvider:
+      case PopupType.EditCopilotBYOKModel:
+      case PopupType.ConfirmDeleteCopilotBYOKProvider:
+        return
+    }
+
     // Always close the app menu when showing a pop up. This is only
     // applicable on Windows where we draw a custom app menu.
     this._closeFoldout(FoldoutType.AppMenu)
@@ -4476,43 +4499,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private async repositoryWithRefreshedGitHubRepository(
     repository: Repository
   ): Promise<Repository> {
-    const repoStore = this.repositoriesStore
-    const match = await this.matchGitHubRepository(repository)
-
-    // TODO: We currently never clear GitHub repository associations (see
-    // https://github.com/desktop/desktop/issues/1144). So we can bail early at
-    // this point.
-    if (!match) {
-      return repository
-    }
-
-    const { account, owner, name } = match
-    const { endpoint } = account
-    const api = API.fromAccount(account)
-    const apiRepo = await api.fetchRepository(owner, name)
-
-    if (apiRepo === null) {
-      // If the request fails, we want to preserve the existing GitHub
-      // repository info. But if we didn't have a GitHub repository already or
-      // the endpoint changed, the skeleton repository is better than nothing.
-      if (endpoint !== repository.gitHubRepository?.endpoint) {
-        const ghRepo = await repoStore.upsertGitHubRepositoryFromMatch(match)
-        return repoStore.setGitHubRepository(repository, ghRepo)
-      }
-
-      return repository
-    }
-
-    if (repository.gitHubRepository) {
-      const gitStore = this.gitStoreCache.get(repository)
-      await updateRemoteUrl(gitStore, repository.gitHubRepository, apiRepo)
-    }
-
-    const ghRepo = await repoStore.upsertGitHubRepository(endpoint, apiRepo)
-    const freshRepo = await repoStore.setGitHubRepository(repository, ghRepo)
-
-    await this.refreshBranchProtectionState(freshRepo)
-    return freshRepo
+    return repository
   }
 
   /**
@@ -4558,21 +4545,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
       repository.gitHubRepository,
       branches
     )
-  }
-
-  private async matchGitHubRepository(
-    repository: Repository
-  ): Promise<IMatchedGitHubRepository | null> {
-    const gitStore = this.gitStoreCache.get(repository)
-
-    if (!gitStore.defaultRemote) {
-      await gitStore.loadRemotes()
-    }
-
-    const remote = gitStore.defaultRemote
-    return remote !== null
-      ? matchGitHubRepository(this.accounts, remote.url)
-      : null
   }
 
   /** This shouldn't be called directly. See `Dispatcher`. */
@@ -5328,7 +5300,6 @@ export class AppStore extends TypedBaseStore<IAppState> {
     isLocalCommit: boolean,
     continueWithForcePush: boolean = false
   ) {
-
     await this._changeRepositorySection(
       repository,
       RepositorySectionTab.Changes
@@ -7118,8 +7089,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
     }
   }
 
-  public _changeCloneRepositoriesTab(tab: CloneRepositoryTab): Promise<void> {
-    this.selectedCloneRepositoryTab = tab
+  public _changeCloneRepositoriesTab(_tab: CloneRepositoryTab): Promise<void> {
+    this.selectedCloneRepositoryTab = CloneRepositoryTab.Generic
 
     this.emitUpdate()
 

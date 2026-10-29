@@ -3,7 +3,6 @@ import { TextBox } from '../lib/text-box'
 import { Button } from '../lib/button'
 import { Row } from '../lib/row'
 import { DialogContent } from '../dialog'
-import { Ref } from '../lib/ref'
 
 interface ICloneGenericRepositoryProps {
   /** The URL to clone. */
@@ -34,18 +33,11 @@ export class CloneGenericRepository extends React.Component<
       <DialogContent className="clone-generic-repository-content">
         <Row>
           <TextBox
-            placeholder="URL or username/repository"
+            placeholder="Git remote URL"
             value={this.props.url}
             onValueChanged={this.onUrlChanged}
             autoFocus={true}
-            label={
-              <div className="clone-url-textbox-label">
-                <p>Repository URL or GitHub username and repository</p>
-                <p>
-                  (<Ref>hubot/cool-repo</Ref>)
-                </p>
-              </div>
-            }
+            label="Repository URL"
           />
         </Row>
 

@@ -25,26 +25,12 @@ import { startTimer } from '../lib/timing'
 import { CommitWarning, CommitWarningIcon } from './commit-warning'
 import { LinkButton } from '../lib/link-button'
 import { CommitOptions, Foldout, FoldoutType } from '../../lib/app-state'
-import { IAvatarUser, getAvatarUserFromAuthor } from '../../models/avatar'
 import { showContextualMenu } from '../../lib/menu-item'
-import { Account, isEnterpriseAccount } from '../../models/account'
-import {
-  CommitMessageAvatar,
-  CommitMessageAvatarWarningType,
-} from './commit-message-avatar'
-import {
-  getStealthEmailForUser,
-  isAttributableEmailFor,
-  lookupPreferredEmail,
-} from '../../lib/email'
-import { setGlobalConfigValue } from '../../lib/git/config'
-import { Popup, PopupType } from '../../models/popup'
-import { RepositorySettingsTab } from '../repository-settings/repository-settings'
+import { Account } from '../../models/account'
 import { IdealSummaryLength } from '../../lib/wrap-rich-text-commit-message'
 import { isEmptyOrWhitespace } from '../../lib/is-empty-or-whitespace'
 import { TooltipDirection } from '../lib/tooltip'
 import { ToggledtippedContent } from '../lib/toggletipped-content'
-import { PreferencesTab } from '../../models/preferences'
 import {
   RepoRuleEnforced,
   RepoRulesInfo,
@@ -60,7 +46,6 @@ import { RepoRulesetsForBranchLink } from '../repository-rules/repo-rulesets-for
 import { RepoRulesMetadataFailureList } from '../repository-rules/repo-rules-failure-list'
 import { formatCommitMessage } from '../../lib/format-commit-message'
 import { useRepoRulesLogic } from '../../lib/helpers/repo-rules'
-import { isDotCom } from '../../lib/endpoint-capabilities'
 import { WorkingDirectoryFileChange } from '../../models/status'
 import {
   enableCommitMessageGeneration,
@@ -182,13 +167,6 @@ interface ICommitMessageProps {
    */
   readonly onCommitMessageFocusSet: () => void
 
-  /**
-   * Called when the user email in Git config has been updated to refresh
-   * the repository state.
-   */
-  readonly onRefreshAuthor: () => void
-
-  readonly onShowPopup: (popup: Popup) => void
   readonly onShowFoldout: (foldout: Foldout) => void
   readonly onCommitSpellcheckEnabledChanged: (enabled: boolean) => void
   readonly onStopAmending: () => void
@@ -729,94 +707,6 @@ export class CommitMessage extends React.Component<
       this.createCommit()
       event.preventDefault()
     }
-  }
-
-  private renderAvatar() {
-    const { commitAuthor, repository } = this.props
-    const { gitHubRepository } = repository
-    const avatarUser: IAvatarUser | undefined =
-      commitAuthor !== null
-        ? getAvatarUserFromAuthor(commitAuthor, gitHubRepository)
-        : undefined
-
-    const repositoryAccount = this.props.repositoryAccount
-    const accountEmails =
-      repositoryAccount?.emails.filter(e => e.verified).map(e => e.email) ?? []
-
-    if (repositoryAccount && isDotCom(repositoryAccount.endpoint)) {
-      const { id, login, endpoint } = repositoryAccount
-      const stealthEmail = getStealthEmailForUser(id, login, endpoint)
-
-      if (
-        !accountEmails
-          .map(x => x.toLowerCase())
-          .includes(stealthEmail.toLowerCase())
-      ) {
-        accountEmails.push(stealthEmail)
-      }
-    }
-
-    const email = commitAuthor?.email
-
-    let warningType: CommitMessageAvatarWarningType = 'none'
-    if (email !== undefined) {
-      if (
-        this.state.repoRulesEnabled &&
-        this.state.repoRuleCommitAuthorFailures.status !== 'pass'
-      ) {
-        warningType = 'disallowedEmail'
-      } else if (
-        repositoryAccount !== null &&
-        repositoryAccount !== undefined &&
-        isAttributableEmailFor(repositoryAccount, email) === false
-      ) {
-        warningType = 'misattribution'
-      }
-    }
-
-    return (
-      <CommitMessageAvatar
-        user={avatarUser}
-        email={commitAuthor?.email}
-        isEnterpriseAccount={
-          repositoryAccount !== null && isEnterpriseAccount(repositoryAccount)
-        }
-        warningType={warningType}
-        emailRuleFailures={this.state.repoRuleCommitAuthorFailures}
-        branch={this.props.branch}
-        accountEmails={accountEmails}
-        preferredAccountEmail={
-          repositoryAccount !== null && repositoryAccount !== undefined
-            ? lookupPreferredEmail(repositoryAccount)
-            : ''
-        }
-        onUpdateEmail={this.onUpdateUserEmail}
-        onOpenRepositorySettings={this.onOpenRepositorySettings}
-        onOpenGitSettings={this.onOpenGitSettings}
-        repository={repository}
-        accounts={this.props.accounts}
-      />
-    )
-  }
-
-  private onUpdateUserEmail = async (email: string) => {
-    await setGlobalConfigValue('user.email', email)
-    this.props.onRefreshAuthor()
-  }
-
-  private onOpenRepositorySettings = () => {
-    this.props.onShowPopup({
-      type: PopupType.RepositorySettings,
-      repository: this.props.repository,
-      initialSelectedTab: RepositorySettingsTab.GitConfig,
-    })
-  }
-
-  private onOpenGitSettings = () => {
-    this.props.onShowPopup({
-      type: PopupType.Preferences,
-      initialSelectedTab: PreferencesTab.Git,
-    })
   }
 
   private get isCoAuthorInputEnabled() {
@@ -1753,8 +1643,6 @@ export class CommitMessage extends React.Component<
         ref={this.wrapperRef}
       >
         <div className={summaryClassName} ref={this.summaryGroupRef}>
-          {this.renderAvatar()}
-
           <AutocompletingInput
             required={false}
             label={this.props.showInputLabels === true ? 'Summary' : undefined}

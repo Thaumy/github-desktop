@@ -19,11 +19,9 @@ import { parseError } from '../../lib/squirrel-error-parser'
 import { ReleaseSummary } from '../../models/release-notes'
 import { generateReleaseSummary } from '../../lib/release-notes'
 import { setNumber, getNumber } from '../../lib/local-storage'
-import { enableUpdateFromEmulatedX64ToARM64 } from '../../lib/feature-flag'
 import { offsetFromNow } from '../../lib/offset-from'
 import { gte, SemVer } from 'semver'
 import { getVersion } from './app-proxy'
-import { getUserAgent } from '../../lib/http'
 
 /** The last version a showcase was seen. */
 export const lastShowCaseVersionSeen = 'version-of-last-showcase'
@@ -223,42 +221,9 @@ class UpdateStore {
     }
   }
 
-  private async getUpdatesUrl(skipGuidCheck: boolean) {
-    let url = null
-
-    try {
-      url = new URL(__UPDATES_URL__)
-    } catch (e) {
-      log.error('Error parsing updates url', e)
-      return __UPDATES_URL__
-    }
-
-    if (skipGuidCheck) {
-      // This will effectively disable the staggered releases system and attempt
-      // to retrieve the latest available deployment.
-      url.searchParams.set('skipGuidCheck', '1')
-    }
-
-    // If the app is running under arm64 to x64 translation, we need to tweak the
-    // update URL here to point at the arm64 binary.
-    if (
-      enableUpdateFromEmulatedX64ToARM64() &&
-      (await isRunningUnderARM64Translation()) === true
-    ) {
-      url.pathname = url.pathname.replace(
-        /\/desktop\/desktop\/(x64\/)?latest/,
-        '/desktop/desktop/arm64/latest'
-      )
-
-      // If we want the app to force an auto-update from x64 to arm64 right
-      // after being installed, we need to spoof a really old version to trick
-      // both Central and Squirrel into thinking we need the update.
-      if (this.supportsImmediateUpdateFromEmulatedX64ToARM64()) {
-        url.searchParams.set('version', '0.0.64')
-      }
-    }
-
-    return url.toString()
+  private async getUpdatesUrl(_skipGuidCheck: boolean): Promise<string | null> {
+    // The upstream updater would replace this fork with GitHub Desktop.
+    return null
   }
 
   /** Quit and install the update. */
@@ -270,31 +235,7 @@ class UpdateStore {
     quitAndInstallUpdate()
   }
 
-  private async updatePriorityUpdateStatus() {
-    try {
-      const response = await fetch(await this.getUpdatesUrl(false), {
-        method: 'HEAD',
-        headers: { 'user-agent': getUserAgent() },
-      })
-
-      const prioritizeUpdate =
-        response.headers.get('x-prioritize-update') === 'true'
-
-      const prioritizeUpdateInfoUrl =
-        response.headers.get('x-prioritize-update-info-url') ?? undefined
-
-      if (
-        this._prioritizeUpdate !== prioritizeUpdate ||
-        this._prioritizeUpdateInfoUrl !== prioritizeUpdateInfoUrl
-      ) {
-        this._prioritizeUpdate = prioritizeUpdate
-        this._prioritizeUpdateInfoUrl = prioritizeUpdateInfoUrl
-        this.emitDidChange()
-      }
-    } catch (e) {
-      log.error('Error updating priority update status', e)
-    }
-  }
+  private async updatePriorityUpdateStatus() {}
 
   /**
    * Method to determine if we should show an update showcase call to action.
@@ -314,7 +255,7 @@ class UpdateStore {
       this.newReleases = await generateReleaseSummary()
     }
 
-    if (this.newReleases === null) {
+    if (this.newReleases === null || this.newReleases.length === 0) {
       return false
     }
 

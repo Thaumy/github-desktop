@@ -1,4 +1,4 @@
-import { Menu, shell, app, BrowserWindow } from 'electron'
+import { Menu, BrowserWindow } from 'electron'
 import { ensureItemIds } from './ensure-item-ids'
 import { MenuEvent } from './menu-event'
 import { truncateWithEllipsis } from '../../lib/truncate-with-ellipsis'
@@ -7,14 +7,7 @@ import { UNSAFE_openDirectory } from '../shell'
 import { MenuLabelsEvent } from '../../models/menu-labels'
 import * as ipcWebContents from '../ipc-webcontents'
 import { mkdir } from 'fs/promises'
-import { buildTestMenu } from './build-test-menu'
 
-const createPullRequestLabel = __DARWIN__
-  ? 'Create Pull Request'
-  : 'Create &pull request'
-const showPullRequestLabel = __DARWIN__
-  ? 'View Pull Request on GitHub'
-  : 'View &pull request on GitHub'
 const defaultBranchNameValue = __DARWIN__ ? 'Default Branch' : 'default branch'
 const confirmRepositoryRemovalLabel = __DARWIN__ ? 'Remove…' : '&Remove…'
 const repositoryRemovalLabel = __DARWIN__ ? 'Remove' : '&Remove'
@@ -40,7 +33,6 @@ export function buildDefaultMenu({
   selectedShell,
   askForConfirmationOnForcePush,
   askForConfirmationOnRepositoryRemoval,
-  hasCurrentPullRequest = false,
   contributionTargetDefaultBranch = defaultBranchNameValue,
   isForcePushForCurrentRepository = false,
   isStashedChangesVisible = false,
@@ -55,10 +47,6 @@ export function buildDefaultMenu({
   const removeRepoLabel = askForConfirmationOnRepositoryRemoval
     ? confirmRepositoryRemovalLabel
     : repositoryRemovalLabel
-
-  const pullRequestLabel = hasCurrentPullRequest
-    ? showPullRequestLabel
-    : createPullRequestLabel
 
   const template = new Array<Electron.MenuItemConstructorOptions>()
 
@@ -329,12 +317,6 @@ export function buildDefaultMenu({
       },
       separator,
       {
-        id: 'view-repository-on-github',
-        label: __DARWIN__ ? 'View on GitHub' : '&View on GitHub',
-        accelerator: 'CmdOrCtrl+Shift+G',
-        click: emit('view-repository-on-github'),
-      },
-      {
         label: __DARWIN__
           ? `Open in ${selectedShell ?? 'Shell'}`
           : `O&pen in ${selectedShell ?? 'shell'}`,
@@ -365,15 +347,6 @@ export function buildDefaultMenu({
         id: 'open-with-external-editor',
         accelerator: 'CmdOrCtrl+Shift+Alt+A',
         click: emit('open-with-external-editor'),
-      },
-      separator,
-      {
-        id: 'create-issue-in-repository-on-github',
-        label: __DARWIN__
-          ? 'Create Issue on GitHub'
-          : 'Create &issue on GitHub',
-        accelerator: 'CmdOrCtrl+I',
-        click: emit('create-issue-in-repository-on-github'),
       },
       separator,
       {
@@ -455,34 +428,7 @@ export function buildDefaultMenu({
       accelerator: 'CmdOrCtrl+Shift+E',
       click: emit('rebase-branch'),
     },
-    separator,
-    {
-      label: __DARWIN__ ? 'Compare on GitHub' : 'Compare on &GitHub',
-      id: 'compare-on-github',
-      accelerator: 'CmdOrCtrl+Shift+C',
-      click: emit('compare-on-github'),
-    },
-    {
-      label: __DARWIN__ ? 'View Branch on GitHub' : 'View branch on GitHub',
-      id: 'branch-on-github',
-      accelerator: 'CmdOrCtrl+Alt+B',
-      click: emit('branch-on-github'),
-    },
   ]
-
-  branchSubmenu.push({
-    label: __DARWIN__ ? 'Preview Pull Request' : 'Preview pull request',
-    id: 'preview-pull-request',
-    accelerator: 'CmdOrCtrl+Alt+P',
-    click: emit('preview-pull-request'),
-  })
-
-  branchSubmenu.push({
-    label: pullRequestLabel,
-    id: 'create-pull-request',
-    accelerator: 'CmdOrCtrl+R',
-    click: emit('open-pull-request'),
-  })
 
   template.push({
     label: __DARWIN__ ? 'Branch' : '&Branch',
@@ -503,46 +449,6 @@ export function buildDefaultMenu({
     })
   }
 
-  const submitIssueItem: Electron.MenuItemConstructorOptions = {
-    label: __DARWIN__ ? 'Report Issue…' : 'Report issue…',
-    click() {
-      shell
-        .openExternal('https://github.com/desktop/desktop/issues/new/choose')
-        .catch(err => log.error('Failed opening issue creation page', err))
-    },
-  }
-
-  const contactSupportItem: Electron.MenuItemConstructorOptions = {
-    label: __DARWIN__ ? 'Contact GitHub Support…' : '&Contact GitHub support…',
-    click() {
-      shell
-        .openExternal(
-          `https://github.com/contact?from_desktop_app=1&app_version=${app.getVersion()}`
-        )
-        .catch(err => log.error('Failed opening contact support page', err))
-    },
-  }
-
-  const showUserGuides: Electron.MenuItemConstructorOptions = {
-    label: 'Show User Guides',
-    click() {
-      shell
-        .openExternal('https://docs.github.com/en/desktop')
-        .catch(err => log.error('Failed opening user guides page', err))
-    },
-  }
-
-  const showKeyboardShortcuts: Electron.MenuItemConstructorOptions = {
-    label: __DARWIN__ ? 'Show Keyboard Shortcuts' : 'Show keyboard shortcuts',
-    click() {
-      shell
-        .openExternal(
-          'https://docs.github.com/en/desktop/installing-and-configuring-github-desktop/overview/keyboard-shortcuts'
-        )
-        .catch(err => log.error('Failed opening keyboard shortcuts page', err))
-    },
-  }
-
   const showLogsLabel = __DARWIN__
     ? 'Show Logs in Finder'
     : __WIN32__
@@ -559,15 +465,7 @@ export function buildDefaultMenu({
     },
   }
 
-  const helpItems = [
-    submitIssueItem,
-    contactSupportItem,
-    showUserGuides,
-    showKeyboardShortcuts,
-    showLogsItem,
-  ]
-
-  helpItems.push(...buildTestMenu())
+  const helpItems = [showLogsItem]
 
   if (__DARWIN__) {
     template.push({

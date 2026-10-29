@@ -114,42 +114,16 @@ export function getAbsoluteUrl(endpoint: string, path: string): string {
  * then will update the cache with the downloaded resource.
  */
 export function request(
-  endpoint: string,
-  token: string | null,
-  method: HTTPMethod,
-  path: string,
-  jsonBody?: Object,
-  customHeaders?: Object,
-  reloadCache: boolean = false
+  _endpoint: string,
+  _token: string | null,
+  _method: HTTPMethod,
+  _path: string,
+  _jsonBody?: Object,
+  _customHeaders?: Object,
+  _reloadCache: boolean = false
 ): Promise<Response> {
-  const url = getAbsoluteUrl(endpoint, path)
-
-  let headers: any = {
-    Accept: 'application/vnd.github.v3+json, application/json',
-    'Content-Type': 'application/json',
-    'User-Agent': getUserAgent(),
-  }
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-
-  headers = {
-    ...headers,
-    ...customHeaders,
-  }
-
-  const options: RequestInit = {
-    headers,
-    method,
-    body: JSON.stringify(jsonBody),
-  }
-
-  if (reloadCache) {
-    options.cache = 'reload' as RequestCache
-  }
-
-  return fetch(url, options)
+  // This client is exclusively used by the removed GitHub API integration.
+  return Promise.reject(new Error('GitHub integration is unavailable.'))
 }
 
 /** Get the user agent to use for all requests. */

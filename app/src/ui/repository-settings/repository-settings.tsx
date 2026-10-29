@@ -5,7 +5,6 @@ import { GitIgnore } from './git-ignore'
 import { assertNever } from '../../lib/fatal-error'
 import { IRemote } from '../../models/remote'
 import { Dispatcher } from '../dispatcher'
-import { PopupType } from '../../models/popup'
 import {
   Repository,
   getForkContributionTarget,
@@ -228,7 +227,7 @@ export class RepositorySettings extends React.Component<
             />
           )
         } else {
-          return <NoRemote onPublish={this.onPublish} />
+          return <NoRemote />
         }
       }
       case RepositorySettingsTab.IgnoredFiles: {
@@ -276,13 +275,6 @@ export class RepositorySettings extends React.Component<
       default:
         return assertNever(tab, `Unknown tab type: ${tab}`)
     }
-  }
-
-  private onPublish = () => {
-    this.props.dispatcher.showPopup({
-      type: PopupType.PublishRepository,
-      repository: this.props.repository,
-    })
   }
 
   private onShowGitIgnoreExamples = () => {

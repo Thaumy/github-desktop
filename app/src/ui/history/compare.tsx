@@ -32,7 +32,6 @@ import { getUniqueCoauthorsAsAuthors } from '../../lib/unique-coauthors-as-autho
 import { getSquashedCommitDescription } from '../../lib/squash/squashed-commit-description'
 import { doMergeCommitsExistAfterCommit } from '../../lib/git'
 import { KeyboardInsertionData } from '../lib/list'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 import { formatNumber } from '../../lib/format-number'
 
@@ -49,7 +48,6 @@ interface ICompareSidebarProps {
   readonly selectedCommitShas: ReadonlyArray<string>
   readonly onRevertCommit: (commit: Commit) => void
   readonly onAmendCommit: (commit: Commit, isLocalCommit: boolean) => void
-  readonly onViewCommitOnGitHub: (sha: string) => void
   readonly onCompareListScrolled: (scrollTop: number) => void
   readonly onCherryPick: (
     repository: Repository,
@@ -61,7 +59,6 @@ interface ICompareSidebarProps {
   readonly aheadBehindStore: AheadBehindStore
   readonly isMultiCommitOperationInProgress?: boolean
   readonly shasToHighlight: ReadonlyArray<string>
-  readonly accounts: ReadonlyArray<Account>
   readonly preferAbsoluteDates: boolean
 }
 interface ICompareSidebarState {
@@ -277,7 +274,6 @@ export class CompareSidebar extends React.Component<
         canAmendCommits={formState.kind === HistoryTabMode.History}
         emoji={this.props.emoji}
         reorderingEnabled={formState.kind === HistoryTabMode.History}
-        onViewCommitOnGitHub={this.props.onViewCommitOnGitHub}
         onUndoCommit={this.onUndoCommit}
         onResetToCommit={this.onResetToCommit}
         onRevertCommit={
@@ -315,7 +311,6 @@ export class CompareSidebar extends React.Component<
           this.props.isMultiCommitOperationInProgress
         }
         keyboardReorderData={this.state.keyboardReorderData}
-        accounts={this.props.accounts}
         preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )

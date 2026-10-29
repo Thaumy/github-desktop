@@ -8,8 +8,7 @@ import { ICommitContext } from '../../models/commit'
 import { DefaultCommitMessage } from '../../models/commit-message'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 
-const GitLFSWebsiteURL =
-  'https://help.github.com/articles/versioning-large-files/'
+const GitLFSWebsiteURL = 'https://git-lfs.com/'
 
 interface IOversizedFilesProps {
   readonly oversizedFiles: ReadonlyArray<string>
@@ -38,15 +37,14 @@ export class OversizedFiles extends React.Component<IOversizedFilesProps> {
           <p>
             The following files are over 100MB.{' '}
             <strong>
-              If you commit these files, you will no longer be able to push this
-              repository to GitHub.com.
+              These files may exceed your remote server's file size limit.
             </strong>
           </p>
           {this.renderFileList()}
           <p className="recommendation">
             We recommend you avoid committing these files or use{' '}
             <LinkButton uri={GitLFSWebsiteURL}>Git LFS</LinkButton> to store
-            large files on GitHub.
+            large files.
           </p>
         </DialogContent>
 

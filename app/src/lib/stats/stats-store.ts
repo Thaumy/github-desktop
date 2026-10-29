@@ -41,7 +41,6 @@ import { isInApplicationFolder } from '../../ui/main-process-proxy'
 import { getRendererGUID } from '../get-renderer-guid'
 import { ValidNotificationPullRequestReviewState } from '../valid-notification-pull-request-review'
 import { useExternalCredentialHelperKey } from '../trampoline/use-external-credential-helper'
-import { getUserAgent } from '../http'
 import { getHooksEnvEnabled } from '../hooks/config'
 
 type PullRequestReviewStatFieldInfix =
@@ -57,8 +56,6 @@ type PullRequestReviewStatFieldSuffix =
 type PullRequestReviewStatField =
   `pullRequestReview${PullRequestReviewStatFieldInfix}${PullRequestReviewStatFieldSuffix}`
 
-const StatsEndpoint = 'https://central.github.com/api/usage/desktop'
-
 /** The URL to the stats samples page. */
 export const SamplesURL = 'https://desktop.github.com/usage-data/'
 
@@ -66,9 +63,6 @@ const LastDailyStatsReportKey = 'last-daily-stats-report'
 
 /** The localStorage key for whether the user has opted out. */
 const StatsOptOutKey = 'stats-opt-out'
-
-/** Have we successfully sent the stats opt-in? */
-const HasSentOptInPingKey = 'has-sent-stats-opt-in-ping'
 
 const WelcomeWizardInitiatedAtKey = 'welcome-wizard-initiated-at'
 const WelcomeWizardCompletedAtKey = 'welcome-wizard-terminated-at'
@@ -450,15 +444,11 @@ export interface IStatsStore {
   increment: (k: keyof NumericMeasures, n?: number) => Promise<void>
 }
 
-const defaultPostImplementation = (body: Record<string, any>) =>
-  fetch(StatsEndpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'user-agent': getUserAgent(),
-    },
-    body: JSON.stringify(body),
-  })
+const defaultPostImplementation = async (
+  _body: Record<string, any>
+): Promise<Response> => {
+  throw new Error('Usage reporting is unavailable.')
+}
 
 /** The store for the app's stats. */
 export class StatsStore implements IStatsStore {
@@ -472,15 +462,7 @@ export class StatsStore implements IStatsStore {
     private readonly uiActivityMonitor: IUiActivityMonitor,
     private readonly post = defaultPostImplementation
   ) {
-    const storedValue = getHasOptedOutOfStats()
-
-    this.optOut = storedValue || false
-
-    // If the user has set an opt out value but we haven't sent the ping yet,
-    // give it a shot now.
-    if (!getBoolean(HasSentOptInPingKey, false)) {
-      this.sendOptInStatusPing(this.optOut, storedValue)
-    }
+    this.optOut = true
 
     this.enableUiActivityMonitoring()
 
@@ -815,20 +797,11 @@ export class StatsStore implements IStatsStore {
 
   /** Set whether the user has opted out of stats reporting. */
   public async setOptOut(
-    optOut: boolean,
-    userViewedPrompt: boolean
+    _optOut: boolean,
+    _userViewedPrompt: boolean
   ): Promise<void> {
-    const changed = this.optOut !== optOut
-
-    this.optOut = optOut
-
-    const previousValue = getBoolean(StatsOptOutKey)
-
-    setBoolean(StatsOptOutKey, optOut)
-
-    if (changed || userViewedPrompt) {
-      await this.sendOptInStatusPing(optOut, previousValue)
-    }
+    this.optOut = true
+    setBoolean(StatsOptOutKey, true)
   }
 
   /** Has the user opted out of stats reporting? */
@@ -1152,46 +1125,6 @@ export class StatsStore implements IStatsStore {
     this.updateDailyMeasures(
       m => ({ [k]: m[k] + n } as Pick<IDailyMeasures, keyof NumericMeasures>)
     )
-
-  /**
-   * Send opt-in ping with details of previous stored value (if known)
-   *
-   * @param optOut        Whether or not the user has opted out of usage
-   *                      reporting.
-   * @param previousValue The raw, current value stored for the "stats-opt-out"
-   *                      localStorage key, or undefined if no previously stored
-   *                      value exists.
-   */
-  private async sendOptInStatusPing(
-    optOut: boolean,
-    previousValue: boolean | undefined
-  ): Promise<void> {
-    // The analytics pipeline expects us to submit `optIn` but we track `optOut`
-    // so we need to invert the value before we send it.
-    const optIn = !optOut
-    const previousOptInValue =
-      previousValue === undefined ? null : !previousValue
-    const direction = optIn ? 'in' : 'out'
-
-    try {
-      const response = await this.post({
-        eventType: 'ping',
-        optIn,
-        previousOptInValue,
-      })
-      if (!response.ok) {
-        throw new Error(
-          `Unexpected status: ${response.statusText} (${response.status})`
-        )
-      }
-
-      setBoolean(HasSentOptInPingKey, true)
-
-      log.info(`Opt ${direction} reported.`)
-    } catch (e) {
-      log.error(`Error reporting opt ${direction}:`, e)
-    }
-  }
 }
 
 /**
@@ -1243,5 +1176,5 @@ function timeTo(key: string): number | undefined {
  * or not.
  */
 export function getHasOptedOutOfStats() {
-  return getBoolean(StatsOptOutKey)
+  return true
 }

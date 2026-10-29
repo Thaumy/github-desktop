@@ -27,8 +27,6 @@ export const generateRepositoryListContextMenu = (
 ) => {
   const { repository } = config
   const missing = repository instanceof Repository && repository.missing
-  const github =
-    repository instanceof Repository && repository.gitHubRepository != null
   const openInExternalEditor = config.externalEditorLabel
     ? `Open in ${config.externalEditorLabel}`
     : DefaultEditorLabel
@@ -47,11 +45,6 @@ export const generateRepositoryListContextMenu = (
       action: () => clipboard.writeText(repository.path),
     },
     { type: 'separator' },
-    {
-      label: 'View on GitHub',
-      action: () => config.onViewOnGitHub(repository),
-      enabled: github,
-    },
     {
       label: openInShell,
       action: () => config.onOpenInShell(repository),

@@ -1,117 +1,36 @@
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import { Account } from '../../src/models/account'
-import { AccountsStore } from '../../src/lib/stores'
-import { InMemoryStore, AsyncInMemoryStore } from '../helpers/stores'
+import { AccountsStore } from '../../src/lib/stores/accounts-store'
+import { IDataStore, ISecureStore } from '../../src/lib/stores/stores'
+
+// Any access to persisted accounts or tokens must fail this test.
+const unexpectedAccess = () => {
+  throw new Error('Account storage must not be accessed')
+}
+const dataStore: IDataStore = {
+  getItem: unexpectedAccess,
+  setItem: unexpectedAccess,
+}
+const secureStore: ISecureStore = {
+  getItem: unexpectedAccess,
+  setItem: unexpectedAccess,
+  deleteItem: unexpectedAccess,
+}
 
 describe('AccountsStore', () => {
-  let accountsStore: AccountsStore
-
-  beforeEach(() => {
-    accountsStore = new AccountsStore(
-      new InMemoryStore(),
-      new AsyncInMemoryStore()
-    )
+  it('does not load persisted accounts or their tokens', async () => {
+    const store = new AccountsStore(dataStore, secureStore)
+    assert.deepEqual(await store.getAll(), [])
+    await store.refresh()
+    assert.deepEqual(await store.getAll(), [])
   })
 
-  describe('adding a new user', () => {
-    it('contains the added user', async () => {
-      const newAccountLogin = 'joan'
-      await accountsStore.addAccount(
-        new Account(newAccountLogin, '', 'deadbeef', [], '', 1, '', 'free')
-      )
-
-      const users = await accountsStore.getAll()
-      assert.equal(users[0].login, newAccountLogin)
-    })
-  })
-
-  describe('loading persisted users', () => {
-    it('migrates .ghe.com users still using /api/v3 to api. subdomain', async () => {
-      const dataStore = new InMemoryStore()
-      dataStore.setItem(
-        'users',
-        JSON.stringify([
-          {
-            login: 'joan',
-            endpoint: 'https://whatever.ghe.com/api/v3',
-            token: 'deadbeef',
-            emails: [],
-            avatarURL: '',
-            id: 1,
-            name: '',
-            plan: 'free',
-          },
-        ])
-      )
-      accountsStore = new AccountsStore(dataStore, new AsyncInMemoryStore())
-
-      const users = await accountsStore.getAll()
-      assert.equal(users[0].login, 'joan')
-      assert.equal(users[0].endpoint, 'https://api.whatever.ghe.com/')
-
-      const persistedUsers = JSON.parse(dataStore.getItem('users'))
-      assert.equal(persistedUsers[0].login, 'joan')
-      assert.equal(persistedUsers[0].endpoint, 'https://api.whatever.ghe.com/')
-    })
-
-    it('does NOT migrate GHE users already using the api. subdomain', async () => {
-      const dataStore = new InMemoryStore()
-      dataStore.setItem(
-        'users',
-        JSON.stringify([
-          {
-            login: 'joan',
-            endpoint: 'https://api.whatever.ghe.com/',
-            token: 'deadbeef',
-            emails: [],
-            avatarURL: '',
-            id: 1,
-            name: '',
-            plan: 'free',
-          },
-        ])
-      )
-      accountsStore = new AccountsStore(dataStore, new AsyncInMemoryStore())
-
-      const users = await accountsStore.getAll()
-      assert.equal(users[0].login, 'joan')
-      assert.equal(users[0].endpoint, 'https://api.whatever.ghe.com/')
-
-      const persistedUsers = JSON.parse(dataStore.getItem('users'))
-      assert.equal(persistedUsers[0].login, 'joan')
-      assert.equal(persistedUsers[0].endpoint, 'https://api.whatever.ghe.com/')
-    })
-
-    it('does NOT migrate GHES users still using /api/v3 to api. subdomain', async () => {
-      const dataStore = new InMemoryStore()
-      dataStore.setItem(
-        'users',
-        JSON.stringify([
-          {
-            login: 'joan',
-            endpoint: 'https://my-company-repos.com/api/v3',
-            token: 'deadbeef',
-            emails: [],
-            avatarURL: '',
-            id: 1,
-            name: '',
-            plan: 'free',
-          },
-        ])
-      )
-      accountsStore = new AccountsStore(dataStore, new AsyncInMemoryStore())
-
-      const users = await accountsStore.getAll()
-      assert.equal(users[0].login, 'joan')
-      assert.equal(users[0].endpoint, 'https://my-company-repos.com/api/v3')
-
-      const persistedUsers = JSON.parse(dataStore.getItem('users'))
-      assert.equal(persistedUsers[0].login, 'joan')
-      assert.equal(
-        persistedUsers[0].endpoint,
-        'https://my-company-repos.com/api/v3'
-      )
-    })
+  it('does not accept new accounts or write credentials', async () => {
+    const store = new AccountsStore(dataStore, secureStore)
+    const account = new Account('joan', '', '', [], '', 1, '', 'free')
+    assert.equal(await store.addAccount(account), null)
+    await store.removeAccount(account)
+    assert.deepEqual(await store.getAll(), [])
   })
 })

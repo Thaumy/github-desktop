@@ -6,7 +6,6 @@ import { WindowState } from '../lib/window-state'
 import { Octicon } from '../ui/octicons'
 import * as octicons from '../ui/octicons/octicons.generated'
 import { Button } from '../ui/lib/button'
-import { LinkButton } from '../ui/lib/link-button'
 import { getVersion } from '../ui/lib/app-proxy'
 import { getOS } from '../lib/get-os'
 import * as ipcRenderer from '../lib/ipc-renderer'
@@ -41,8 +40,6 @@ const BottomImageUri = encodePathAsUrl(
   __dirname,
   'static/welcome-illustration-left-bottom.svg'
 )
-
-const issuesUri = 'https://github.com/desktop/desktop/issues'
 
 /**
  * Formats an error by attempting to strip out user-identifiable information
@@ -148,25 +145,14 @@ export class CrashApp extends React.Component<ICrashAppProps, ICrashAppState> {
   }
 
   private renderDescription() {
-    if (this.state.type === 'launch') {
-      return (
-        <p>
-          GitHub Desktop encountered a catastrophic error that prevents it from
-          launching. This has been reported to the team, but if you encounter
-          this repeatedly please report this issue to the GitHub Desktop{' '}
-          <LinkButton uri={issuesUri}>issue tracker</LinkButton>.
-        </p>
-      )
-    } else {
-      return (
-        <p>
-          GitHub Desktop has encountered an unrecoverable error and will need to
-          restart. This has been reported to the team, but if you encounter this
-          repeatedly please report this issue to the GitHub Desktop{' '}
-          <LinkButton uri={issuesUri}>issue tracker</LinkButton>.
-        </p>
-      )
-    }
+    return (
+      <p>
+        {this.state.type === 'launch'
+          ? 'The application could not launch.'
+          : 'The application encountered an unrecoverable error and needs to restart.'}{' '}
+        Error details are shown below and in the local logs.
+      </p>
+    )
   }
 
   private renderErrorDetails() {

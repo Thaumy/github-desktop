@@ -2003,32 +2003,17 @@ export class Dispatcher {
   public async dispatchURLAction(action: URLActionType): Promise<void> {
     switch (action.name) {
       case 'oauth':
-        await this.appStore._resolveOAuthRequest(action)
-
-        if (__DARWIN__) {
-          // workaround for user reports that the application doesn't receive focus
-          // after completing the OAuth signin in the browser
-          const isFocused = await isWindowFocused()
-          if (!isFocused) {
-            log.info(
-              `refocusing the main window after the OAuth flow is completed`
-            )
-            window.focus()
-          }
-        }
-        break
+        return
 
       case 'open-repository-from-url':
-        this.openRepositoryFromUrl(action)
+        if (action.pr === null) {
+          this.openRepositoryFromUrl(action)
+        }
         break
 
       default:
         const unknownAction: IUnknownAction = action
-        log.warn(
-          `Unknown URL action: ${
-            unknownAction.name
-          } - payload: ${JSON.stringify(unknownAction)}`
-        )
+        log.warn(`Unknown URL action: ${unknownAction.name}`)
     }
   }
 
@@ -3409,7 +3394,6 @@ export class Dispatcher {
 
     this.appStore._setMultiCommitOperationUndoState(repository, tip)
 
-
     const result = await this.appStore._reorderCommits(
       repository,
       commitsToReorder,
@@ -3497,7 +3481,6 @@ export class Dispatcher {
     })
 
     this.appStore._setMultiCommitOperationUndoState(repository, tip)
-
 
     const result = await this.appStore._squash(
       repository,

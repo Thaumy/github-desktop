@@ -4,21 +4,16 @@ import { PullRequest } from '../../models/pull-request'
 import { Dispatcher } from '../dispatcher'
 import { Octicon, OcticonSymbol } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
-import { RepositoryWithGitHubRepository } from '../../models/repository'
 import { SandboxedMarkdown } from '../lib/sandboxed-markdown'
 import { LinkButton } from '../lib/link-button'
 import classNames from 'classnames'
-import { Avatar } from '../lib/avatar'
 import { formatRelative } from '../../lib/format-relative'
-import { getStealthEmailForUser } from '../../lib/email'
 import { IAPIIdentity } from '../../lib/api'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 
 interface IPullRequestCommentLikeProps {
   readonly id?: string
   readonly dispatcher: Dispatcher
-  readonly repository: RepositoryWithGitHubRepository
   readonly pullRequest: PullRequest
   readonly eventDate: Date
   readonly eventVerb: string
@@ -39,8 +34,6 @@ interface IPullRequestCommentLikeProps {
 
   readonly onSubmit: () => void
   readonly onDismissed: () => void
-
-  readonly accounts: ReadonlyArray<Account>
 }
 
 /**
@@ -81,15 +74,7 @@ export abstract class PullRequestCommentLike extends React.Component<IPullReques
   }
 
   private renderTimelineItem() {
-    const { user, repository, eventDate, eventVerb, externalURL, accounts } =
-      this.props
-    const { endpoint } = repository.gitHubRepository
-    const userAvatar = {
-      name: user.login,
-      email: getStealthEmailForUser(user.id, user.login, endpoint),
-      avatarURL: user.avatar_url,
-      endpoint: endpoint,
-    }
+    const { user, eventDate, eventVerb, externalURL } = this.props
 
     const bottomLine = this.shouldRenderCommentBubble()
       ? null
@@ -106,12 +91,6 @@ export abstract class PullRequestCommentLike extends React.Component<IPullReques
       <div className="timeline-item-container">
         {this.renderDashedTimelineLine('top')}
         <div className={timelineItemClass}>
-          <Avatar
-            accounts={accounts}
-            user={userAvatar}
-            title={null}
-            size={40}
-          />
           {this.renderReviewIcon()}
           <div className="summary">
             <LinkButton uri={user.html_url} className="author">

@@ -439,7 +439,6 @@ export class PushPullButton extends React.Component<
       aheadBehind,
       numTagsToPush,
       remoteName,
-      repository,
       tipState,
       rebaseInProgress,
       lastFetched,
@@ -452,7 +451,7 @@ export class PushPullButton extends React.Component<
     }
 
     if (remoteName === null) {
-      return this.publishRepositoryButton(this.push)
+      return this.noRemoteButton()
     }
 
     if (tipState === TipState.Unborn) {
@@ -464,12 +463,7 @@ export class PushPullButton extends React.Component<
     }
 
     if (aheadBehind === null) {
-      const isGitHubRepository = repository.gitHubRepository !== null
-      return this.publishBranchButton(
-        isGitHubRepository,
-        this.push,
-        this.props.shouldNudge
-      )
+      return this.publishBranchButton(this.push, this.props.shouldNudge)
     }
 
     const { ahead, behind } = aheadBehind
@@ -524,16 +518,16 @@ export class PushPullButton extends React.Component<
     )
   }
 
-  private publishRepositoryButton(onClick: () => void) {
+  private noRemoteButton() {
     return (
       <ToolbarButton
         {...this.defaultButtonProps()}
-        title="Publish repository"
-        description="Publish this repository to GitHub"
+        title="No remote"
+        description="Configure a Git remote to enable fetch, pull, and push"
         className="push-pull-button"
         icon={octicons.upload}
         style={ToolbarButtonStyle.Subtitle}
-        onClick={onClick}
+        disabled={true}
       />
     )
   }
@@ -554,14 +548,8 @@ export class PushPullButton extends React.Component<
     )
   }
 
-  private publishBranchButton(
-    isGitHub: boolean,
-    onClick: () => void,
-    shouldNudge: boolean
-  ) {
-    const description = isGitHub
-      ? 'Publish this branch to GitHub'
-      : 'Publish this branch to the remote'
+  private publishBranchButton(onClick: () => void, shouldNudge: boolean) {
+    const description = 'Publish this branch to the remote'
 
     const className = classNames(
       this.defaultDropdownProps().className,

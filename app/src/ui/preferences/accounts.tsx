@@ -4,13 +4,10 @@ import {
   isDotComAccount,
   isEnterpriseAccount,
 } from '../../models/account'
-import { IAvatarUser } from '../../models/avatar'
-import { lookupPreferredEmail } from '../../lib/email'
 import { assertNever } from '../../lib/fatal-error'
 import { Button } from '../lib/button'
 import { Row } from '../lib/row'
 import { DialogContent, DialogPreferredFocusClassName } from '../dialog'
-import { Avatar } from '../lib/avatar'
 import { CallToAction } from '../lib/call-to-action'
 import { getHTMLURL } from '../../lib/api'
 
@@ -65,13 +62,6 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
   }
 
   private renderAccount(account: Account, type: SignInType) {
-    const avatarUser: IAvatarUser = {
-      name: account.name,
-      email: lookupPreferredEmail(account),
-      avatarURL: account.avatarURL,
-      endpoint: account.endpoint,
-    }
-
     // The DotCom account is shown first, so its sign in/out button should be
     // focused initially when the dialog is opened.
     const className =
@@ -80,7 +70,6 @@ export class Accounts extends React.Component<IAccountsProps, {}> {
     return (
       <Row className="account-info">
         <div className="user-info-container">
-          <Avatar accounts={this.props.accounts} user={avatarUser} />
           <div className="user-info">
             {isEnterpriseAccount(account) ? (
               <>

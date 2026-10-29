@@ -20,12 +20,7 @@ import { FetchType } from '../models/fetch'
 import { shouldRenderApplicationMenu } from './lib/features'
 import { matchExistingRepository } from '../lib/repository-matching'
 import { getVersion, getName } from './lib/app-proxy'
-import {
-  getOS,
-  isOSNoLongerSupportedByElectron,
-  isMacOSAndNoLongerSupportedByElectron,
-  isWindowsAndNoLongerSupportedByElectron,
-} from '../lib/get-os'
+import { getOS, isOSNoLongerSupportedByElectron } from '../lib/get-os'
 import { MenuEvent, isTestMenuEvent } from '../main-process/menu'
 import {
   Repository,
@@ -173,7 +168,6 @@ import { UnreachableCommitsDialog } from './history/unreachable-commits-dialog'
 import { OpenPullRequestDialog } from './open-pull-request/open-pull-request-dialog'
 import { sendNonFatalException } from '../lib/helpers/non-fatal-exception'
 import { ICustomIntegration } from '../lib/custom-integration'
-import { createCommitURL } from '../lib/commit-url'
 import { InstallingUpdate } from './installing-update/installing-update'
 import { DialogStackContext } from './dialog'
 import { TestNotifications } from './test-notifications/test-notifications'
@@ -595,31 +589,6 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.setCommitMessageFocus(true)
   }
 
-  private checkForUpdates(
-    inBackground: boolean,
-    skipGuidCheck: boolean = false
-  ) {
-    if (__LINUX__ || __RELEASE_CHANNEL__ === 'development') {
-      return
-    }
-
-    if (isWindowsAndNoLongerSupportedByElectron()) {
-      log.error(
-        `Can't check for updates on Windows 8.1 or older. Next available update only supports Windows 10 and later`
-      )
-      return
-    }
-
-    if (isMacOSAndNoLongerSupportedByElectron()) {
-      log.error(
-        `Can't check for updates on macOS 10.15 or older. Next available update only supports macOS 11.0 and later`
-      )
-      return
-    }
-
-    updateStore.checkForUpdates(inBackground, skipGuidCheck)
-  }
-
   private updateBranchWithContributionTargetBranch() {
     const { selectedState } = this.state
     if (
@@ -797,29 +766,6 @@ export class App extends React.Component<IAppProps, IAppState> {
       type: PopupType.CloneRepository,
       initialURL,
     })
-  }
-
-  private showCreateTutorialRepositoryPopup = () => {
-    const account =
-      this.state.accounts.find(isDotComAccount) ?? this.state.accounts.at(0)
-
-    if (!account) {
-      return
-    }
-
-    this.props.dispatcher.showPopup({
-      type: PopupType.CreateTutorialRepository,
-      account,
-    })
-  }
-
-  private onResumeTutorialRepository = () => {
-    const tutorialRepository = this.getSelectedTutorialRepository()
-    if (!tutorialRepository) {
-      return
-    }
-
-    this.props.dispatcher.resumeTutorial(tutorialRepository)
   }
 
   private getSelectedTutorialRepository() {
@@ -1640,14 +1586,9 @@ export class App extends React.Component<IAppProps, IAppState> {
         return (
           <CloneRepository
             key="clone-repository"
-            accounts={this.state.accounts}
             initialURL={popup.initialURL}
             onDismissed={onPopupDismissedFn}
             dispatcher={this.props.dispatcher}
-            selectedTab={this.state.selectedCloneRepositoryTab}
-            onTabSelected={this.onCloneRepositoriesTabSelected}
-            apiRepositories={this.state.apiRepositories}
-            onRefreshRepositories={this.onRefreshRepositories}
             isTopMost={isTopMost}
           />
         )
@@ -1736,11 +1677,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             applicationName={getName()}
             applicationVersion={version}
             applicationArchitecture={process.arch}
-            onCheckForNonStaggeredUpdates={this.onCheckForNonStaggeredUpdates}
             onShowAcknowledgements={this.showAcknowledgements}
-            onShowTermsAndConditions={this.showTermsAndConditions}
-            updateState={this.state.updateState}
-            onQuitAndInstall={this.onQuitAndInstall}
           />
         )
       case PopupType.PublishRepository:
@@ -2369,18 +2306,17 @@ export class App extends React.Component<IAppProps, IAppState> {
       case PopupType.PullRequestReview: {
         return (
           <PullRequestReview
+            repository={popup.repository}
             key="pull-request-review"
             dispatcher={this.props.dispatcher}
             shouldCheckoutBranch={popup.shouldCheckoutBranch}
             shouldChangeRepository={popup.shouldChangeRepository}
-            repository={popup.repository}
             pullRequest={popup.pullRequest}
             review={popup.review}
             emoji={this.state.emoji}
             onSubmit={onPopupDismissedFn}
             onDismissed={onPopupDismissedFn}
             underlineLinks={this.state.underlineLinks}
-            accounts={this.state.accounts}
           />
         )
       }
@@ -2406,7 +2342,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             selectedTab={popup.selectedTab}
             emoji={emoji}
             onDismissed={onPopupDismissedFn}
-            accounts={this.state.accounts}
             preferAbsoluteDates={this.state.preferAbsoluteDates}
           />
         )
@@ -2498,18 +2433,17 @@ export class App extends React.Component<IAppProps, IAppState> {
       case PopupType.PullRequestComment: {
         return (
           <PullRequestComment
+            repository={popup.repository}
             key="pull-request-comment"
             dispatcher={this.props.dispatcher}
             shouldCheckoutBranch={popup.shouldCheckoutBranch}
             shouldChangeRepository={popup.shouldChangeRepository}
-            repository={popup.repository}
             pullRequest={popup.pullRequest}
             comment={popup.comment}
             emoji={this.state.emoji}
             onSubmit={onPopupDismissedFn}
             onDismissed={onPopupDismissedFn}
             underlineLinks={this.state.underlineLinks}
-            accounts={this.state.accounts}
           />
         )
       }
@@ -2549,7 +2483,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             key="about"
             onDismissed={onPopupDismissedFn}
             onShowAcknowledgements={this.showAcknowledgements}
-            onShowTermsAndConditions={this.showTermsAndConditions}
           />
         )
       case PopupType.PushProtectionError:
@@ -2786,14 +2719,6 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.installLFSHooks(repositories)
   }
 
-  private onCloneRepositoriesTabSelected = (tab: CloneRepositoryTab) => {
-    this.props.dispatcher.changeCloneRepositoriesTab(tab)
-  }
-
-  private onRefreshRepositories = (account: Account) => {
-    this.props.dispatcher.refreshApiRepositories(account)
-  }
-
   private onShowIntegrationsPreferences = () => {
     this.props.dispatcher.showPopup({
       type: PopupType.Preferences,
@@ -2818,9 +2743,6 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.openShell(path, true)
   }
 
-  private onCheckForNonStaggeredUpdates = () =>
-    this.checkForUpdates(false, true)
-
   private onSaveCopilotBYOKProvider = (
     provider: IBYOKProvider,
     secret: string | null | undefined
@@ -2839,12 +2761,6 @@ export class App extends React.Component<IAppProps, IAppState> {
   private showAcknowledgements = () => {
     this.props.dispatcher.showPopup({ type: PopupType.Acknowledgements })
   }
-
-  private showTermsAndConditions = () => {
-    this.props.dispatcher.showPopup({ type: PopupType.TermsAndConditions })
-  }
-
-  private onQuitAndInstall = () => updateStore.quitAndInstallUpdate()
 
   private renderPopups() {
     const popupContent = this.allPopupContent()
@@ -2883,7 +2799,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             commit={commit}
             selectedCommits={selectedCommits}
             emoji={emoji}
-            accounts={this.state.accounts}
           />
         )
       default:
@@ -3441,20 +3356,12 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private renderRepository() {
-    const { accounts } = this.state
-
     if (this.inNoRepositoriesViewState()) {
       return (
         <NoRepositoriesView
-          accounts={accounts}
           onCreate={this.showCreateRepository}
           onClone={this.showCloneRepo}
           onAdd={this.showAddLocalRepo}
-          onCreateTutorialRepository={this.showCreateTutorialRepositoryPopup}
-          onResumeTutorialRepository={this.onResumeTutorialRepository}
-          tutorialPaused={this.isTutorialPaused()}
-          apiRepositories={this.state.apiRepositories}
-          onRefreshRepositories={this.onRefreshRepositories}
         />
       )
     }
@@ -3482,7 +3389,6 @@ export class App extends React.Component<IAppProps, IAppState> {
           stashedFilesWidth={state.stashedFilesWidth}
           issuesStore={this.props.issuesStore}
           gitHubUserStore={this.props.gitHubUserStore}
-          onViewCommitOnGitHub={this.onViewCommitOnGitHub}
           imageDiffType={state.imageDiffType}
           hideWhitespaceInChangesDiff={state.hideWhitespaceInChangesDiff}
           hideWhitespaceInHistoryDiff={state.hideWhitespaceInHistoryDiff}
@@ -3550,13 +3456,7 @@ export class App extends React.Component<IAppProps, IAppState> {
   }
 
   private renderWelcomeFlow() {
-    return (
-      <Welcome
-        dispatcher={this.props.dispatcher}
-        accounts={this.state.accounts}
-        signInState={this.state.signInState}
-      />
-    )
+    return <Welcome dispatcher={this.props.dispatcher} />
   }
 
   public render() {
@@ -3601,30 +3501,6 @@ export class App extends React.Component<IAppProps, IAppState> {
   private onSelectionChanged = (repository: Repository | CloningRepository) => {
     this.props.dispatcher.selectRepository(repository)
     this.props.dispatcher.closeFoldout(FoldoutType.Repository)
-  }
-
-  private onViewCommitOnGitHub = async (SHA: string, filePath?: string) => {
-    const repository = this.getRepository()
-
-    if (
-      !repository ||
-      repository instanceof CloningRepository ||
-      !repository.gitHubRepository
-    ) {
-      return
-    }
-
-    const commitURL = createCommitURL(
-      repository.gitHubRepository,
-      SHA,
-      filePath
-    )
-
-    if (commitURL === null) {
-      return
-    }
-
-    this.props.dispatcher.openInBrowser(commitURL)
   }
 
   private onBranchDeleted = (repository: Repository) => {

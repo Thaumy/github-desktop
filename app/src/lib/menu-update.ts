@@ -477,6 +477,17 @@ export function updateMenuState(
   currentAppMenu: AppMenu | null
 ) {
   const menuState = getMenuState(state)
+  // These actions no longer exist in the account-free application menu.
+  for (const id of [
+    'view-repository-on-github',
+    'compare-on-github',
+    'branch-on-github',
+    'create-issue-in-repository-on-github',
+    'create-pull-request',
+    'preview-pull-request',
+  ] as const) {
+    menuState.delete(id)
+  }
 
   // Try to avoid updating sending the IPC message at all
   // if we have a current app menu that we can compare against.

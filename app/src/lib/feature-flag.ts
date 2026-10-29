@@ -76,7 +76,7 @@ export function enablePreviousTagSuggestions(): boolean {
 
 /** Should we show a pull-requests quick view? */
 export function enablePullRequestQuickView(): boolean {
-  return enableDevelopmentFeatures()
+  return false
 }
 
 /** Should we support image previews for dds files? */
@@ -88,29 +88,13 @@ export const enableCustomIntegration = () => true
 
 export const enableResizingToolbarButtons = () => true
 
-export const enableCommitMessageGeneration = (account: Account) => {
-  return (
-    (account.features ?? []).includes(
-      'desktop_copilot_generate_commit_message'
-    ) &&
-    // IMPORTANT: Do not remove this feature flag without replacing its usages
-    // with a check for the `isCopilotDesktopEnabled` property on the account.
-    account.isCopilotDesktopEnabled
-  )
-}
+export const enableCommitMessageGeneration = (_account: Account) => false
 
-export const enableCopilotSdkCommitMessageGeneration = (account: Account) => {
-  return (
-    enableBetaFeatures() &&
-    (account.features ?? []).includes(
-      'desktop_enable_copilot_sdk_commit_message_generation'
-    )
-  )
-}
+export const enableCopilotSdkCommitMessageGeneration = (_account: Account) =>
+  false
 
-/** Should we enable Copilot-powered merge conflict resolution? */
 export function enableCopilotConflictResolution(): boolean {
-  return enableDevelopmentFeatures()
+  return false
 }
 
 export function enableAccessibleListToolTips(): boolean {

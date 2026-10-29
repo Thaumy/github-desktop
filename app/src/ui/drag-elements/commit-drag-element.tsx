@@ -9,7 +9,6 @@ import { GitHubRepository } from '../../models/github-repository'
 import { CommitListItem } from '../history/commit-list-item'
 import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 
 interface ICommitDragElementProps {
@@ -22,7 +21,6 @@ interface ICommitDragElementProps {
    */
   readonly isKeyboardInsertion?: boolean
   readonly emoji: Map<string, Emoji>
-  readonly accounts: ReadonlyArray<Account>
 }
 
 interface ICommitDragElementState {
@@ -190,7 +188,6 @@ export class CommitDragElement extends React.Component<
             selectedCommits={selectedCommits}
             emoji={emoji}
             showUnpushedIndicator={false}
-            accounts={this.props.accounts}
             preferAbsoluteDates={false}
           />
         </div>

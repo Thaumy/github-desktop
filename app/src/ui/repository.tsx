@@ -49,7 +49,6 @@ interface IRepositoryViewProps {
   readonly stashedFilesWidth: IConstrainedValue
   readonly issuesStore: IssuesStore
   readonly gitHubUserStore: GitHubUserStore
-  readonly onViewCommitOnGitHub: (SHA: string, filePath?: string) => void
   readonly imageDiffType: ImageDiffType
   readonly hideWhitespaceInChangesDiff: boolean
   readonly hideWhitespaceInHistoryDiff: boolean
@@ -285,6 +284,7 @@ export class RepositoryView extends React.Component<
 
     return (
       <ChangesSidebar
+        accounts={this.props.accounts}
         ref={this.changesSidebarRef}
         repository={this.props.repository}
         dispatcher={this.props.dispatcher}
@@ -317,7 +317,6 @@ export class RepositoryView extends React.Component<
         askForConfirmationOnCommitFilteredChanges={
           this.props.askForConfirmationOnCommitFilteredChanges
         }
-        accounts={this.props.accounts}
         isShowingModal={this.props.isShowingModal}
         isShowingFoldout={this.props.isShowingFoldout}
         externalEditorLabel={this.props.externalEditorLabel}
@@ -379,7 +378,6 @@ export class RepositoryView extends React.Component<
         dispatcher={dispatcher}
         onRevertCommit={this.onRevertCommit}
         onAmendCommit={this.onAmendCommit}
-        onViewCommitOnGitHub={this.props.onViewCommitOnGitHub}
         onCompareListScrolled={this.onCompareListScrolled}
         onCherryPick={this.props.onCherryPick}
         compareListScrollTop={scrollTop}
@@ -389,7 +387,6 @@ export class RepositoryView extends React.Component<
         askForConfirmationOnCheckoutCommit={
           this.props.askForConfirmationOnCheckoutCommit
         }
-        accounts={this.props.accounts}
         preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )
@@ -523,7 +520,7 @@ export class RepositoryView extends React.Component<
   }
 
   private renderContentForHistory(): JSX.Element {
-    const { commitSelection, commitLookup, localCommitSHAs } = this.props.state
+    const { commitSelection, commitLookup } = this.props.state
     const { changesetData, file, diff, shas, shasInDiff, isContiguous } =
       commitSelection
 
@@ -546,7 +543,6 @@ export class RepositoryView extends React.Component<
         selectedCommits={selectedCommits}
         shasInDiff={shasInDiff}
         isContiguous={isContiguous}
-        localCommitSHAs={localCommitSHAs}
         changesetData={changesetData}
         selectedFile={file}
         currentDiff={diff}
@@ -555,7 +551,6 @@ export class RepositoryView extends React.Component<
         selectedDiffType={this.props.imageDiffType}
         externalEditorLabel={this.props.externalEditorLabel}
         onOpenInExternalEditor={this.props.onOpenInExternalEditor}
-        onViewCommitOnGitHub={this.props.onViewCommitOnGitHub}
         hideWhitespaceInDiff={this.props.hideWhitespaceInHistoryDiff}
         showSideBySideDiff={this.props.showSideBySideDiff}
         onOpenBinaryFile={this.onOpenBinaryFile}
@@ -563,7 +558,6 @@ export class RepositoryView extends React.Component<
         onChangeImageDiffType={this.onChangeImageDiffType}
         onDiffOptionsOpened={this.onDiffOptionsOpened}
         showDragOverlay={showDragOverlay}
-        accounts={this.props.accounts}
         preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )

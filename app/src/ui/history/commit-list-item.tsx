@@ -11,7 +11,6 @@ import { IAvatarUser, getAvatarUsersForCommit } from '../../models/avatar'
 import { RichText } from '../lib/rich-text'
 import { RelativeTime } from '../relative-time'
 import { CommitAttribution } from '../lib/commit-attribution'
-import { AvatarStack } from '../lib/avatar-stack'
 import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 import { Draggable } from '../lib/draggable'
@@ -22,7 +21,6 @@ import {
   DropTargetType,
 } from '../../models/drag-drop'
 import classNames from 'classnames'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 import { enableAccessibleListToolTips } from '../../lib/feature-flag'
 import { TooltippedContent } from '../lib/tooltipped-content'
@@ -48,7 +46,6 @@ interface ICommitProps {
   readonly showUnpushedIndicator: boolean
   readonly disableSquashing?: boolean
   readonly unpushedIndicatorTitle?: string
-  readonly accounts: ReadonlyArray<Account>
   readonly preferAbsoluteDates: boolean
 }
 
@@ -160,11 +157,6 @@ export class CommitListItem extends React.PureComponent<
               renderUrlsAsLinks={false}
             />
             <div className="description">
-              <AvatarStack
-                users={this.state.avatarUsers}
-                accounts={this.props.accounts}
-                tooltip={!enableAccessibleListToolTips()}
-              />
               <div className="byline">
                 <CommitAttribution avatarUsers={this.state.avatarUsers} />
                 {renderRelativeTime(date, this.props.preferAbsoluteDates)}

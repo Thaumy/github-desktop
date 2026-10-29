@@ -51,7 +51,7 @@ import classNames from 'classnames'
 import { hasWritePermission } from '../../models/github-repository'
 import { hasConflictedFiles } from '../../lib/status'
 import { createObservableRef } from '../lib/observable-ref'
-import { Popup, PopupType } from '../../models/popup'
+import { PopupType } from '../../models/popup'
 import { EOL } from 'os'
 import { RepoRulesInfo } from '../../models/repo-rules'
 import { IAheadBehind } from '../../models/branch'
@@ -976,8 +976,6 @@ export class FilterChangesList extends React.Component<
         onPersistCommitMessage={this.onPersistCommitMessage}
         onGenerateCommitMessage={this.onGenerateCommitMessage}
         onCommitMessageFocusSet={this.onCommitMessageFocusSet}
-        onRefreshAuthor={this.onRefreshAuthor}
-        onShowPopup={this.onShowPopup}
         onShowFoldout={this.onShowFoldout}
         onCommitSpellcheckEnabledChanged={this.onCommitSpellcheckEnabledChanged}
         onStopAmending={this.onStopAmending}
@@ -1016,9 +1014,6 @@ export class FilterChangesList extends React.Component<
     dispatcher.showUnknownAuthorsCommitWarning(coAuthors, onCommitAnyway)
   }
 
-  private onRefreshAuthor = () =>
-    this.props.dispatcher.refreshAuthor(this.props.repository)
-
   private onCommitMessageFocusSet = () =>
     this.props.dispatcher.setCommitMessageFocus(false)
 
@@ -1044,7 +1039,6 @@ export class FilterChangesList extends React.Component<
         )
   }
 
-  private onShowPopup = (p: Popup) => this.props.dispatcher.showPopup(p)
   private onShowFoldout = (f: Foldout) => this.props.dispatcher.showFoldout(f)
 
   private onCommitSpellcheckEnabledChanged = (enabled: boolean) =>

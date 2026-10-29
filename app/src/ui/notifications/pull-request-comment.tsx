@@ -1,14 +1,13 @@
+import { RepositoryWithGitHubRepository } from '../../models/repository'
 import * as React from 'react'
 import { Row } from '../lib/row'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { PullRequest } from '../../models/pull-request'
 import { Dispatcher } from '../dispatcher'
-import { RepositoryWithGitHubRepository } from '../../models/repository'
 import { LinkButton } from '../lib/link-button'
 import { IAPIComment } from '../../lib/api'
 import { getPullRequestReviewStateIcon } from './pull-request-review-helpers'
 import { PullRequestCommentLike } from './pull-request-comment-like'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 
 interface IPullRequestCommentProps {
@@ -31,8 +30,6 @@ interface IPullRequestCommentProps {
 
   readonly onSubmit: () => void
   readonly onDismissed: () => void
-
-  readonly accounts: ReadonlyArray<Account>
 }
 
 interface IPullRequestCommentState {
@@ -55,16 +52,8 @@ export class PullRequestComment extends React.Component<
   }
 
   public render() {
-    const {
-      dispatcher,
-      repository,
-      pullRequest,
-      emoji,
-      comment,
-      onSubmit,
-      onDismissed,
-      accounts,
-    } = this.props
+    const { dispatcher, pullRequest, emoji, comment, onSubmit, onDismissed } =
+      this.props
 
     const icon = getPullRequestReviewStateIcon('COMMENTED')
 
@@ -72,7 +61,6 @@ export class PullRequestComment extends React.Component<
       <PullRequestCommentLike
         id="pull-request-comment"
         dispatcher={dispatcher}
-        repository={repository}
         pullRequest={pullRequest}
         emoji={emoji}
         eventDate={new Date(comment.created_at)}
@@ -87,7 +75,6 @@ export class PullRequestComment extends React.Component<
         onSubmit={onSubmit}
         onDismissed={onDismissed}
         underlineLinks={this.props.underlineLinks}
-        accounts={accounts}
       />
     )
   }

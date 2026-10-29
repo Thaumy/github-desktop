@@ -7,7 +7,6 @@ import { RichText } from '../lib/rich-text'
 import { Repository } from '../../models/repository'
 import { Commit } from '../../models/commit'
 import { getAvatarUsersForCommit, IAvatarUser } from '../../models/avatar'
-import { AvatarStack } from '../lib/avatar-stack'
 import { CommitAttribution } from '../lib/commit-attribution'
 import { Tokenizer, TokenResult } from '../../lib/text-token-parser'
 import { wrapRichTextCommitMessage } from '../../lib/wrap-rich-text-commit-message'
@@ -17,9 +16,7 @@ import { LinkButton } from '../lib/link-button'
 import { UnreachableCommitsTab } from './unreachable-commits-dialog'
 import memoizeOne from 'memoize-one'
 import { Button } from '../lib/button'
-import { Avatar } from '../lib/avatar'
 import { CopyButton } from '../copy-button'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 import { RelativeTime } from '../relative-time'
 import { formatDate } from '../../lib/format-date'
@@ -47,8 +44,6 @@ interface IExpandableCommitSummaryProps {
 
   /** Called to show unreachable commits dialog */
   readonly showUnreachableCommits: (tab: UnreachableCommitsTab) => void
-
-  readonly accounts: ReadonlyArray<Account>
 
   /**
    * Whether to render dates as absolute dates rather than relative ones. Mirrors
@@ -85,8 +80,7 @@ interface IExpandableCommitSummaryState {
   readonly isOverflowed: boolean
 
   /**
-   * The avatars associated with this commit. Used when rendering
-   * the avatar stack and calculated whenever the commit prop changes.
+   * The authors associated with this commit, recalculated when it changes.
    */
   readonly avatarUsers: ReadonlyArray<IAvatarUser>
 }
@@ -409,7 +403,6 @@ export class ExpandableCommitSummary extends React.Component<
     return this.state.avatarUsers.map((user, i) => {
       return (
         <div className="author selectable" key={i}>
-          <Avatar accounts={this.props.accounts} user={user} title={null} />
           <div>{this.renderExpandedAuthor(user)}</div>
         </div>
       )
@@ -417,15 +410,9 @@ export class ExpandableCommitSummary extends React.Component<
   }
 
   private renderAuthorStack = () => {
-    const { accounts } = this.props
     const { avatarUsers } = this.state
 
-    return (
-      <>
-        <AvatarStack users={avatarUsers} accounts={accounts} />
-        <CommitAttribution avatarUsers={avatarUsers} />
-      </>
-    )
+    return <CommitAttribution avatarUsers={avatarUsers} />
   }
 
   private renderAuthors = () => {

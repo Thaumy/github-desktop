@@ -12,7 +12,6 @@ import { IAutocompletionProvider } from '../autocompletion'
 import { Author, UnknownAuthor } from '../../models/author'
 import { CommitMessage } from '../changes/commit-message'
 import noop from 'lodash/noop'
-import { Popup } from '../../models/popup'
 import { CommitOptions, Foldout } from '../../lib/app-state'
 import { Account } from '../../models/account'
 import { RepoRulesInfo } from '../../models/repo-rules'
@@ -192,8 +191,6 @@ export class CommitMessageDialog extends React.Component<
             anyFilesSelected={true}
             filesSelected={[]}
             onCommitMessageFocusSet={noop}
-            onRefreshAuthor={this.onRefreshAuthor}
-            onShowPopup={this.onShowPopup}
             onShowFoldout={this.onShowFoldout}
             onCommitSpellcheckEnabledChanged={
               this.onCommitSpellcheckEnabledChanged
@@ -233,10 +230,6 @@ export class CommitMessageDialog extends React.Component<
     dispatcher.showUnknownAuthorsCommitWarning(coAuthors, onCommitAnyway)
   }
 
-  private onRefreshAuthor = () =>
-    this.props.dispatcher.refreshAuthor(this.props.repository)
-
-  private onShowPopup = (p: Popup) => this.props.dispatcher.showPopup(p)
   private onShowFoldout = (f: Foldout) => this.props.dispatcher.showFoldout(f)
 
   private onCommitSpellcheckEnabledChanged = (enabled: boolean) =>

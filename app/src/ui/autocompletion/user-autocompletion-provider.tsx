@@ -5,9 +5,6 @@ import { GitHubUserStore } from '../../lib/stores'
 import { GitHubRepository } from '../../models/github-repository'
 import { Account } from '../../models/account'
 import { IMentionableUser } from '../../lib/databases/index'
-import { Avatar } from '../lib/avatar'
-import { IAvatarUser } from '../../models/avatar'
-import memoizeOne from 'memoize-one'
 import { copilotSweAgentBot } from '../../models/dot-com-bots'
 import { getStealthEmailForUser } from '../../lib/email'
 import { isDotCom } from '../../lib/endpoint-capabilities'
@@ -67,13 +64,6 @@ export class UserAutocompletionProvider
   private readonly repository: GitHubRepository
   private readonly account: Account | null
 
-  // We need to memoize this function so that we don't create a new array
-  // on every render which would cause the Avatar component to re-render
-  // unnecessarily
-  private getAccountsFromAccount = memoizeOne((account: Account | null) => {
-    return account ? [account] : []
-  })
-
   public constructor(
     gitHubUserStore: GitHubUserStore,
     repository: GitHubRepository,
@@ -128,27 +118,6 @@ export class UserAutocompletionProvider
   }
 
   public renderItem(item: UserHit): JSX.Element {
-    if (item.kind === 'known-user' && this.account) {
-      const user: IAvatarUser = {
-        name: item.name ?? item.username,
-        email: item.email,
-        avatarURL: undefined,
-        endpoint: item.endpoint,
-      }
-
-      return (
-        <div className="user" key={item.username}>
-          <Avatar
-            accounts={this.getAccountsFromAccount(this.account)}
-            user={user}
-            aria-hidden={true}
-          />
-          <span className="username">{item.username}</span>
-          <span className="name">{item.name}</span>
-        </div>
-      )
-    }
-
     return item.kind === 'known-user' ? (
       <div className="user" key={item.username}>
         <span className="username">{item.username}</span>

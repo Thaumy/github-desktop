@@ -5,7 +5,6 @@ import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { Commit } from '../../models/commit'
 import { CommitList } from './commit-list'
 import { LinkButton } from '../lib/link-button'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 
 export enum UnreachableCommitsTab {
@@ -31,8 +30,6 @@ interface IUnreachableCommitsDialogProps {
 
   /** Called to dismiss the  */
   readonly onDismissed: () => void
-
-  readonly accounts: ReadonlyArray<Account>
 
   readonly preferAbsoluteDates: boolean
 }
@@ -117,7 +114,6 @@ export class UnreachableCommitsDialog extends React.Component<
             localCommitSHAs={[]}
             emoji={emoji}
             onCommitsSelected={this.onCommitsSelected}
-            accounts={this.props.accounts}
             isInformationalView={true}
             preferAbsoluteDates={this.props.preferAbsoluteDates}
           />

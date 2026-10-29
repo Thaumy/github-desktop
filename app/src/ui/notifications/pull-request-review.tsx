@@ -1,9 +1,9 @@
+import { RepositoryWithGitHubRepository } from '../../models/repository'
 import * as React from 'react'
 import { Row } from '../lib/row'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { PullRequest } from '../../models/pull-request'
 import { Dispatcher } from '../dispatcher'
-import { RepositoryWithGitHubRepository } from '../../models/repository'
 import {
   getPullRequestReviewStateIcon,
   getVerbForPullRequestReview,
@@ -11,7 +11,6 @@ import {
 import { LinkButton } from '../lib/link-button'
 import { ValidNotificationPullRequestReview } from '../../lib/valid-notification-pull-request-review'
 import { PullRequestCommentLike } from './pull-request-comment-like'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 
 interface IPullRequestReviewProps {
@@ -34,8 +33,6 @@ interface IPullRequestReviewProps {
 
   readonly onSubmit: () => void
   readonly onDismissed: () => void
-
-  readonly accounts: ReadonlyArray<Account>
 }
 
 interface IPullRequestReviewState {
@@ -58,15 +55,8 @@ export class PullRequestReview extends React.Component<
   }
 
   public render() {
-    const {
-      dispatcher,
-      repository,
-      pullRequest,
-      emoji,
-      review,
-      onSubmit,
-      onDismissed,
-    } = this.props
+    const { dispatcher, pullRequest, emoji, review, onSubmit, onDismissed } =
+      this.props
 
     const icon = getPullRequestReviewStateIcon(review.state)
 
@@ -74,7 +64,6 @@ export class PullRequestReview extends React.Component<
       <PullRequestCommentLike
         id="pull-request-review"
         dispatcher={dispatcher}
-        repository={repository}
         pullRequest={pullRequest}
         emoji={emoji}
         eventDate={new Date(review.submitted_at)}
@@ -89,7 +78,6 @@ export class PullRequestReview extends React.Component<
         onSubmit={onSubmit}
         onDismissed={onDismissed}
         underlineLinks={this.props.underlineLinks}
-        accounts={this.props.accounts}
       />
     )
   }

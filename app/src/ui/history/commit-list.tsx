@@ -9,7 +9,6 @@ import { DragData, DragType } from '../../models/drag-drop'
 import classNames from 'classnames'
 import memoizeOne from 'memoize-one'
 import { IMenuItem, showContextualMenu } from '../../lib/menu-item'
-import { getDotComAPIEndpoint } from '../../lib/api'
 import { clipboard } from 'electron'
 import { RowIndexPath } from '../lib/list/list-row-index-path'
 import { assertNever } from '../../lib/fatal-error'
@@ -22,11 +21,9 @@ import {
   PopoverScreenBorderPadding,
 } from '../lib/popover'
 import { KeyboardShortcut } from '../keyboard-shortcut/keyboard-shortcut'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 import { getAvatarUsersForCommit, IAvatarUser } from '../../models/avatar'
 import { formatDate } from '../../lib/format-date'
-import { Avatar } from '../lib/avatar'
 import { Octicon } from '../octicons'
 import * as octicons from '../octicons/octicons.generated'
 
@@ -90,7 +87,6 @@ interface ICommitListProps {
   readonly onRewordCommit?: (commit: Commit) => void
 
   /** Callback to fire to open a given commit on GitHub */
-  readonly onViewCommitOnGitHub?: (sha: string) => void
 
   /** Callback to fire to cancel a keyboard reordering operation */
   readonly onCancelKeyboardReorder?: () => void
@@ -183,8 +179,6 @@ interface ICommitListProps {
 
   /** Shas that should be highlighted */
   readonly shasToHighlight?: ReadonlyArray<string>
-
-  readonly accounts: ReadonlyArray<Account>
 
   readonly preferAbsoluteDates: boolean
 
@@ -315,7 +309,6 @@ export class CommitList extends React.Component<
         onRenderCommitDragElement={this.onRenderCommitDragElement}
         onRemoveDragElement={this.props.onRemoveCommitDragElement}
         disableSquashing={this.props.disableSquashing}
-        accounts={this.props.accounts}
         preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )
@@ -519,9 +512,6 @@ export class CommitList extends React.Component<
     const authorList = avatarUsers.map((user, i) => {
       return (
         <div className="author" key={i}>
-          <div className="label">
-            <Avatar accounts={this.props.accounts} user={user} title={null} />
-          </div>
           <div>{this.renderExpandedAuthor(user)}</div>
         </div>
       )
@@ -688,7 +678,6 @@ export class CommitList extends React.Component<
             selectedCommits={commits}
             isKeyboardInsertion={true}
             emoji={emoji}
-            accounts={this.props.accounts}
           />
         )
       default:
@@ -745,16 +734,6 @@ export class CommitList extends React.Component<
     const canBeResetTo =
       this.props.canResetToCommits === true && isResettableCommit
     const canBeCheckedOut = row > 0 //Cannot checkout the current commit
-
-    let viewOnGitHubLabel = 'View on GitHub'
-    const gitHubRepository = this.props.gitHubRepository
-
-    if (
-      gitHubRepository &&
-      gitHubRepository.endpoint !== getDotComAPIEndpoint()
-    ) {
-      viewOnGitHubLabel = 'View on GitHub Enterprise'
-    }
 
     const items: IMenuItem[] = []
 
@@ -875,11 +854,6 @@ export class CommitList extends React.Component<
         label: __DARWIN__ ? darwinTagsLabel : windowTagsLabel,
         action: () => clipboard.writeText(commit.tags.join(' ')),
         enabled: commit.tags.length > 0,
-      },
-      {
-        label: viewOnGitHubLabel,
-        action: () => this.props.onViewCommitOnGitHub?.(commit.sha),
-        enabled: !isLocal && !!gitHubRepository,
       }
     )
 

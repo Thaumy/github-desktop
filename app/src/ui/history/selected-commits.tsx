@@ -27,7 +27,6 @@ import { showContextualMenu } from '../../lib/menu-item'
 
 import { FileList } from './file-list'
 import { SeamlessDiffSwitcher } from '../diff/seamless-diff-switcher'
-import { getDotComAPIEndpoint } from '../../lib/api'
 import { IMenuItem } from '../../lib/menu-item'
 import { IChangesetData } from '../../lib/git'
 import { IConstrainedValue } from '../../lib/app-state'
@@ -36,7 +35,6 @@ import { pathExists } from '../../lib/path-exists'
 import { UnreachableCommitsTab } from './unreachable-commits-dialog'
 import { ExpandableCommitSummary } from './expandable-commit-summary'
 import { DiffHeader } from '../diff/diff-header'
-import { Account } from '../../models/account'
 import { Emoji } from '../../lib/emoji'
 
 interface ISelectedCommitsProps {
@@ -45,7 +43,6 @@ interface ISelectedCommitsProps {
   readonly emoji: Map<string, Emoji>
   readonly selectedCommits: ReadonlyArray<Commit>
   readonly shasInDiff: ReadonlyArray<string>
-  readonly localCommitSHAs: ReadonlyArray<string>
   readonly changesetData: IChangesetData
   readonly selectedFile: CommittedFileChange | null
   readonly currentDiff: IDiff | null
@@ -60,7 +57,6 @@ interface ISelectedCommitsProps {
    * @param path The path of the file relative to the root of the repository
    */
   readonly onOpenInExternalEditor: (path: string) => void
-  readonly onViewCommitOnGitHub: (SHA: string, filePath?: string) => void
   readonly hideWhitespaceInDiff: boolean
 
   /** Whether we should display side by side diffs. */
@@ -89,8 +85,6 @@ interface ISelectedCommitsProps {
 
   /** Whether or not the selection of commits is contiguous */
   readonly isContiguous: boolean
-
-  readonly accounts: ReadonlyArray<Account>
 
   /** Whether to use absolute dates (matches the commit history list). */
   readonly preferAbsoluteDates: boolean
@@ -206,7 +200,6 @@ export class SelectedCommits extends React.Component<
         isExpanded={this.state.isExpanded}
         onHighlightShas={this.onHighlightShas}
         showUnreachableCommits={this.showUnreachableCommits}
-        accounts={this.props.accounts}
         preferAbsoluteDates={this.props.preferAbsoluteDates}
       />
     )
@@ -370,12 +363,7 @@ export class SelectedCommits extends React.Component<
   ) => {
     event.preventDefault()
 
-    const {
-      selectedCommits,
-      localCommitSHAs,
-      repository,
-      externalEditorLabel,
-    } = this.props
+    const { repository, externalEditorLabel } = this.props
 
     const fullPath = Path.join(repository.path, file.path)
     const fileExistsOnDisk = await pathExists(fullPath)
@@ -426,31 +414,7 @@ export class SelectedCommits extends React.Component<
       { type: 'separator' },
     ]
 
-    let viewOnGitHubLabel = 'View on GitHub'
-    const gitHubRepository = repository.gitHubRepository
-
-    if (
-      gitHubRepository &&
-      gitHubRepository.endpoint !== getDotComAPIEndpoint()
-    ) {
-      viewOnGitHubLabel = 'View on GitHub Enterprise'
-    }
-
-    items.push({
-      label: viewOnGitHubLabel,
-      action: () => this.onViewOnGitHub(selectedCommits[0].sha, file),
-      enabled:
-        selectedCommits.length === 1 &&
-        !localCommitSHAs.includes(selectedCommits[0].sha) &&
-        !!gitHubRepository &&
-        this.props.selectedCommits.length > 0,
-    })
-
     showContextualMenu(items)
-  }
-
-  private onViewOnGitHub = (sha: string, file: CommittedFileChange) => {
-    this.props.onViewCommitOnGitHub(sha, file.path)
   }
 }
 

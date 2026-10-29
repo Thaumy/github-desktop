@@ -146,13 +146,11 @@ export class RepositoriesStore extends TypedBaseStore<
     return new Repository(
       repo.path,
       repo.id,
-      repo.gitHubRepositoryID !== null
-        ? await this.findGitHubRepositoryByID(repo.gitHubRepositoryID)
-        : await Promise.resolve(null), // Dexie gets confused if we return null
+      await Promise.resolve(null), // Preserve Dexie promise scheduling.
       repo.missing,
       repo.alias,
       repo.workflowPreferences,
-      repo.isTutorialRepository
+      false
     )
   }
 
@@ -483,7 +481,7 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.missing,
       repo.alias,
       repo.workflowPreferences,
-      repo.isTutorialRepository
+      false
     )
 
     assertIsRepositoryWithGitHubRepository(updatedRepo)

@@ -577,11 +577,7 @@ export class CreateBranch extends React.Component<
 }
 
 /** Reusable snippet */
-const defaultBranchLink = (
-  <LinkButton uri="https://help.github.com/articles/setting-the-default-branch/">
-    default branch
-  </LinkButton>
-)
+const defaultBranchLink = 'default branch'
 
 /** Given some branches and a start point, return the proper branch */
 function getBranchForStartPoint(

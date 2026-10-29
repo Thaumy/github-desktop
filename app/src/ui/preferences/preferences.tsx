@@ -3,7 +3,6 @@ import { Account, isDotComAccount } from '../../models/account'
 import { PreferencesTab } from '../../models/preferences'
 import { Dispatcher } from '../dispatcher'
 import { TabBar, TabBarType } from '../tab-bar'
-import { Accounts } from './accounts'
 import { Advanced } from './advanced'
 import { Git } from './git'
 import { assertNever } from '../../lib/fatal-error'
@@ -200,11 +199,22 @@ export class Preferences extends React.Component<
   IPreferencesProps,
   IPreferencesState
 > {
+  private readonly visibleTabs = [
+    PreferencesTab.Integrations,
+    PreferencesTab.Git,
+    PreferencesTab.Appearance,
+    PreferencesTab.Prompts,
+    PreferencesTab.Advanced,
+    PreferencesTab.Accessibility,
+  ]
+
   public constructor(props: IPreferencesProps) {
     super(props)
 
     this.state = {
-      selectedIndex: this.props.initialSelectedTab || PreferencesTab.Accounts,
+      selectedIndex: this.visibleTabs.includes(this.props.initialSelectedTab!)
+        ? this.props.initialSelectedTab!
+        : PreferencesTab.Git,
       committerName: '',
       committerEmail: '',
       defaultBranch: '',
@@ -352,20 +362,10 @@ export class Preferences extends React.Component<
             selectedIndex={this.tabToVisualIndex(this.state.selectedIndex)}
             type={TabBarType.Vertical}
           >
-            <span id={this.getTabId(PreferencesTab.Accounts)}>
-              <Octicon className="icon" symbol={octicons.home} />
-              Accounts
-            </span>
             <span id={this.getTabId(PreferencesTab.Integrations)}>
               <Octicon className="icon" symbol={octicons.person} />
               Integrations
             </span>
-            {this.isCopilotSdkEnabled && (
-              <span id={this.getTabId(PreferencesTab.Copilot)}>
-                <Octicon className="icon" symbol={octicons.copilot} />
-                Copilot
-              </span>
-            )}
             <span id={this.getTabId(PreferencesTab.Git)}>
               <Octicon className="icon" symbol={octicons.gitCommit} />
               Git
@@ -373,10 +373,6 @@ export class Preferences extends React.Component<
             <span id={this.getTabId(PreferencesTab.Appearance)}>
               <Octicon className="icon" symbol={octicons.paintbrush} />
               Appearance
-            </span>
-            <span id={this.getTabId(PreferencesTab.Notifications)}>
-              <Octicon className="icon" symbol={octicons.bell} />
-              Notifications
             </span>
             <span id={this.getTabId(PreferencesTab.Prompts)}>
               <Octicon className="icon" symbol={octicons.question} />
@@ -436,20 +432,6 @@ export class Preferences extends React.Component<
     return `preferences-tab-${suffix}`
   }
 
-  private onDotComSignIn = () => {
-    this.props.onDismissed()
-    this.props.dispatcher.showDotComSignInDialog()
-  }
-
-  private onEnterpriseSignIn = () => {
-    this.props.onDismissed()
-    this.props.dispatcher.showEnterpriseSignInDialog()
-  }
-
-  private onLogout = (account: Account) => {
-    this.props.dispatcher.removeAccount(account)
-  }
-
   private renderDisallowedCharactersError() {
     const message = this.state.disallowedCharactersMessage
     if (message != null) {
@@ -483,15 +465,7 @@ export class Preferences extends React.Component<
     let View
     switch (index) {
       case PreferencesTab.Accounts:
-        View = (
-          <Accounts
-            accounts={this.props.accounts}
-            onDotComSignIn={this.onDotComSignIn}
-            onEnterpriseSignIn={this.onEnterpriseSignIn}
-            onLogout={this.onLogout}
-          />
-        )
-        break
+        return null
       case PreferencesTab.Integrations: {
         View = (
           <Integrations
@@ -656,11 +630,9 @@ export class Preferences extends React.Component<
         View = (
           <Advanced
             useWindowsOpenSSH={this.state.useWindowsOpenSSH}
-            optOutOfUsageTracking={this.state.optOutOfUsageTracking}
             useExternalCredentialHelper={this.state.useExternalCredentialHelper}
             repositoryIndicatorsEnabled={this.state.repositoryIndicatorsEnabled}
             onUseWindowsOpenSSHChanged={this.onUseWindowsOpenSSHChanged}
-            onOptOutofReportingChanged={this.onOptOutofReportingChanged}
             onUseExternalCredentialHelperChanged={
               this.onUseExternalCredentialHelperChanged
             }
@@ -722,10 +694,6 @@ export class Preferences extends React.Component<
 
   private onNotificationsEnabledChanged = (notificationsEnabled: boolean) => {
     this.setState({ notificationsEnabled })
-  }
-
-  private onOptOutofReportingChanged = (value: boolean) => {
-    this.setState({ optOutOfUsageTracking: value })
   }
 
   private onUseExternalCredentialHelperChanged = (value: boolean) => {
@@ -1084,16 +1052,10 @@ export class Preferences extends React.Component<
   }
 
   private tabToVisualIndex(tab: PreferencesTab): number {
-    if (!this.isCopilotSdkEnabled && tab > PreferencesTab.Copilot) {
-      return tab - 1
-    }
-    return tab
+    return this.visibleTabs.indexOf(tab)
   }
 
   private visualIndexToTab(index: number): PreferencesTab {
-    if (!this.isCopilotSdkEnabled && index >= PreferencesTab.Copilot) {
-      return index + 1
-    }
-    return index
+    return this.visibleTabs[index] ?? PreferencesTab.Git
   }
 }

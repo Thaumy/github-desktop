@@ -197,9 +197,8 @@ export class Git extends React.Component<IGitProps> {
         />
 
         <p id="default-branch-description" className="settings-description">
-          GitHub's default branch name is <Ref>main</Ref>. You may want to
-          change it due to different workflows, or because your integrations
-          still require the historical default branch name of <Ref>master</Ref>.
+          Choose the default branch name for new repositories, such as{' '}
+          <Ref>main</Ref> or <Ref>master</Ref>.
         </p>
 
         {this.renderEditGlobalGitConfigInfo()}

@@ -6,7 +6,7 @@ import { GitHubRepository } from '../../../src/models/github-repository'
 import { Owner } from '../../../src/models/owner'
 import { NoRemote } from '../../../src/ui/repository-settings/no-remote'
 import { RepoRulesetsForBranchLink } from '../../../src/ui/repository-rules/repo-rulesets-for-branch-link'
-import { fireEvent, render, screen } from '../../helpers/ui/render'
+import { render, screen } from '../../helpers/ui/render'
 
 function createGitHubRepository() {
   return new GitHubRepository(
@@ -61,34 +61,13 @@ describe('rulesets and publish surfaces', () => {
     )
   })
 
-  it('renders the no-remote publish call to action and invokes publish', () => {
-    let publishCount = 0
+  it('explains how to configure a generic Git remote', () => {
+    const view = render(<NoRemote />)
 
-    function onPublish() {
-      publishCount++
-    }
-
-    const view = render(<NoRemote onPublish={onPublish} />)
-
-    const dialogContent = view.container.querySelector('.dialog-content')
-    const publishButton = screen.getByRole('button', { name: 'Publish' })
-    const helpLink = screen.getByRole('link', {
-      name: 'Learn more about remote repositories.',
-    })
-
-    assert.notEqual(dialogContent, null)
+    assert.notEqual(view.container.querySelector('.dialog-content'), null)
     assert.ok(
-      screen.getByText('Publish your repository to GitHub. Need help?', {
-        exact: false,
-      })
+      view.container.textContent?.includes('git remote add origin <url>')
     )
-    assert.equal(
-      helpLink.getAttribute('href'),
-      'https://help.github.com/articles/about-remote-repositories/'
-    )
-
-    fireEvent.click(publishButton)
-
-    assert.equal(publishCount, 1)
+    assert.equal(view.container.querySelectorAll('button, a').length, 0)
   })
 })

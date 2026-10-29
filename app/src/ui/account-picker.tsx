@@ -8,9 +8,6 @@ import {
   SelectionSource,
 } from './lib/filter-list'
 import { IMatches } from '../lib/fuzzy-find'
-import { Avatar } from './lib/avatar'
-import { lookupPreferredEmail } from '../lib/email'
-import { IAvatarUser } from '../models/avatar'
 import memoizeOne from 'memoize-one'
 
 interface IAccountPickerProps {
@@ -99,24 +96,9 @@ export class AccountPicker extends React.Component<
     this.setState({ filterText: text })
   }
 
-  private getAvatarUser = (account: Account): IAvatarUser => {
-    return {
-      name: account.name,
-      email: lookupPreferredEmail(account),
-      avatarURL: account.avatarURL,
-      endpoint: account.endpoint,
-    }
-  }
-
   private renderAccount = (item: IAccountListItem, matches: IMatches) => {
-    const account = item.account
-
     return (
       <div className="account-list-item">
-        <Avatar
-          accounts={this.props.accounts}
-          user={this.getAvatarUser(account)}
-        />
         <div className="info">
           <div className="title">@{item.account.login}</div>
           <div className="subtitle">{item.account.friendlyEndpoint}</div>
