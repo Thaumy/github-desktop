@@ -675,16 +675,8 @@ export class CommitMessage extends React.Component<
   }
 
   private canExcecuteCommitShortcut(event: KeyboardEvent) {
-    // Once upon a time the CommitMessage component was only ever used in the
-    // changes view so it was safe to bind to the keyDown event of the Window in
-    // order to allow users to hit CmdOrCtrl+Enter to commit from pretty much
-    // anywhere in the app as long as the changes view was active and we weren't
-    // showing a modal or foldout.
-    //
-    // Now that the CommitMessage component is used in other places, such as in
-    // the squash dialog we still want the CmdOrCtrl+Enter shortcut to work
-    // so we'll allow the shortcut even if a dialog is open as long as it's
-    // coming from within the component itself.
+    // Allow commit key events from within this component even when it is
+    // used in a dialog.
     return (
       (event.target instanceof Node &&
         this.wrapperRef.current?.contains(event.target)) ||
@@ -697,9 +689,20 @@ export class CommitMessage extends React.Component<
       return
     }
 
-    const isShortcutKey = __DARWIN__ ? event.metaKey : event.ctrlKey
+    const isSummaryEnter =
+      event.target === this.summaryTextInput &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.shiftKey &&
+      !event.isComposing &&
+      event.keyCode !== 229 &&
+      !event.repeat &&
+      !this.props.isCommitting &&
+      !this.props.isGeneratingCommitMessage
+
     if (
-      isShortcutKey &&
+      isSummaryEnter &&
       event.key === 'Enter' &&
       (this.canCommit() || this.canAmend()) &&
       this.canExcecuteCommitShortcut(event)
