@@ -54,6 +54,7 @@ import {
 import { UiActivityMonitor } from './lib/ui-activity-monitor'
 import { RepositoryStateCache } from '../lib/stores/repository-state-cache'
 import { ApiRepositoriesStore } from '../lib/stores/api-repositories-store'
+import { RepositoryConfig } from '../lib/repository-config'
 import { CommitStatusStore } from '../lib/stores/commit-status-store'
 import { PullRequestCoordinator } from '../lib/stores/pull-request-coordinator'
 
@@ -270,7 +271,8 @@ trampolineServer.registerCommandHandler(
 )
 
 const repositoriesStore = new RepositoriesStore(
-  new RepositoriesDatabase('Database')
+  new RepositoriesDatabase('Database'),
+  new RepositoryConfig()
 )
 
 const pullRequestStore = new PullRequestStore(

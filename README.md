@@ -88,6 +88,45 @@ If you're looking for something to work on, check out the [help wanted](https://
 
 To setup your development environment for building Desktop, check out: [`setup.md`](./docs/contributing/setup.md).
 
+## Repository list
+
+The local repository list is stored in `$XDG_CONFIG_HOME/github-desktop/config.toml`.
+If `XDG_CONFIG_HOME` is unset, empty, or relative, it defaults to `~/.config`,
+giving `~/.config/github-desktop/config.toml`:
+
+```toml
+[[repo]]
+alias = "First project"
+path = "/Users/you/projects/first-repo"
+
+[[repo]]
+path = "~/projects/second-repo"
+```
+
+On the first launch without this file, Desktop creates it from the existing
+repository list and aliases. The order of the `[[repo]]` entries controls the
+repository list order. New repositories are appended; changing an alias or path
+preserves its position. Omit `alias` or set `alias = ""` to display the
+repository's own name.
+Adding, removing, relocating, or renaming an alias in Desktop saves the list
+automatically. Quit Desktop before editing the file, then restart to load your
+changes. Use `repo = []` for an empty list. Each entry must have a unique path
+that is absolute or starts with `~/`. The alias is optional. Invalid
+configuration is reported without overwriting the file.
+
+Aliases are stored in the config; workflow preferences and other metadata remain in
+IndexedDB. Removing a path manually hides that repository; its cached metadata
+is retained for reuse if the path is added again. Removing a repository through
+Desktop also deletes its local database record. Neither action deletes the
+repository from disk. Configuration writes replace the file, including comments.
+
+TOML parsing uses pinned `smol-toml` 1.9.0 from
+[squirrelchat/smol-toml](https://github.com/squirrelchat/smol-toml); schema
+validation uses pinned `zod` 4.3.6 from
+[colinhacks/zod](https://github.com/colinhacks/zod). Config reads are limited to
+1 MiB and 10,000 repository paths, and writes use an atomic replacement with
+owner-only file permissions.
+
 ## More Resources
 
 See [desktop.github.com](https://desktop.github.com) for more product-oriented

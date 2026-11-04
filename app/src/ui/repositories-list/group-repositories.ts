@@ -4,7 +4,6 @@ import {
   nameOf,
 } from '../../models/repository'
 import { CloningRepository } from '../../models/cloning-repository'
-import { caseInsensitiveCompare } from '../../lib/compare'
 import { IFilterListGroup, IFilterListItem } from '../lib/filter-list'
 import { IAheadBehind } from '../../models/branch'
 import { Owner } from '../../models/owner'
@@ -42,7 +41,7 @@ const getDisplayTitle = (r: Repositoryish) =>
  * Builds the list of repositories shown in the repository list.
  *
  * The repository list is intentionally flat: every repository is returned in a
- * single, ungrouped list sorted alphabetically by display title. There is no
+ * single, ungrouped list in the configured order. There is no
  * owner/host/"Recent" grouping.
  */
 export function groupRepositories(
@@ -58,26 +57,19 @@ export function groupRepositories(
     titleCounts.set(title, (titleCounts.get(title) ?? 0) + 1)
   }
 
-  const items = repositories
-    .map(repo => {
-      const repoState = localRepositoryStateLookup.get(repo.id)
-      const title = getDisplayTitle(repo)
+  const items = repositories.map(repo => {
+    const repoState = localRepositoryStateLookup.get(repo.id)
+    const title = getDisplayTitle(repo)
 
-      return {
-        text: repo instanceof Repository ? [title, nameOf(repo)] : [title],
-        id: repo.id.toString(),
-        repository: repo,
-        needsDisambiguation: (titleCounts.get(title) ?? 0) > 1,
-        aheadBehind: repoState?.aheadBehind ?? null,
-        changedFilesCount: repoState?.changedFilesCount ?? 0,
-      }
-    })
-    .sort((x, y) =>
-      caseInsensitiveCompare(
-        getDisplayTitle(x.repository),
-        getDisplayTitle(y.repository)
-      )
-    )
+    return {
+      text: repo instanceof Repository ? [title, nameOf(repo)] : [title],
+      id: repo.id.toString(),
+      repository: repo,
+      needsDisambiguation: (titleCounts.get(title) ?? 0) > 1,
+      aheadBehind: repoState?.aheadBehind ?? null,
+      changedFilesCount: repoState?.changedFilesCount ?? 0,
+    }
+  })
 
   return [{ identifier: { kind: 'other' }, items }]
 }

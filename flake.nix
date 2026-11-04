@@ -46,7 +46,7 @@
           cacheApp = fetchYarnDeps {
             name = "github-desktop-cache-app";
             yarnLock = ./app/yarn.lock;
-            hash = "sha256-DYUlLNxWn4sn7PBir/miJUoDVAQ2/nbOVGWSGN+IPxw=";
+            hash = "sha256-9IWvtItxY6eUa8APuVw5xspSU0BDmtqV+KmUvQYsAeI=";
           };
         });
       });

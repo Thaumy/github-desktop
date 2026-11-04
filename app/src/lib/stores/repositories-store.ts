@@ -28,6 +28,7 @@ import { WorkflowPreferences } from '../../models/workflow-preferences'
 import { clearTagsToPush } from './helpers/tags-to-push-storage'
 import { IMatchedGitHubRepository } from '../repository-matching'
 import { shallowEquals } from '../equality'
+import { RepositoryConfig } from '../repository-config'
 
 type AddRepositoryOptions = {
   missing?: boolean
@@ -53,9 +54,49 @@ export class RepositoriesStore extends TypedBaseStore<
   private protectionEnabledForBranchCache = new Map<string, boolean>()
 
   private emitQueued = false
+  private configInitialization: Promise<void> | null = null
 
-  public constructor(private readonly db: RepositoriesDatabase) {
+  public constructor(
+    private readonly db: RepositoriesDatabase,
+    private readonly config?: RepositoryConfig
+  ) {
     super()
+  }
+
+  private initializeConfig(): Promise<void> {
+    if (this.config === undefined) {
+      return Promise.resolve()
+    }
+
+    return (this.configInitialization ??= this.loadConfig(this.config))
+  }
+
+  private async loadConfig(config: RepositoryConfig) {
+    const existing = await this.db.repositories.toArray()
+    const repositories = await config.load(
+      existing.map(repository => ({
+        path: repository.path,
+        alias: repository.alias ?? '',
+      }))
+    )
+    await this.db.transaction('rw', this.db.repositories, async () => {
+      for (const { path, alias } of repositories) {
+        const existing = await this.db.repositories.get({ path })
+        if (existing === undefined) {
+          await this.db.repositories.add({
+            path,
+            alias: alias || null,
+            missing: false,
+            gitHubRepositoryID: null,
+            lastStashCheckDate: null,
+          })
+        } else if (existing.alias !== (alias || null)) {
+          await this.db.repositories.update(existing.id!, {
+            alias: alias || null,
+          })
+        }
+      }
+    })
   }
 
   /**
@@ -165,7 +206,8 @@ export class RepositoriesStore extends TypedBaseStore<
   }
 
   /** Get all the local repositories. */
-  public getAll(): Promise<ReadonlyArray<Repository>> {
+  public async getAll(): Promise<ReadonlyArray<Repository>> {
+    await this.initializeConfig()
     return this.db.transaction(
       'r',
       this.db.repositories,
@@ -173,8 +215,20 @@ export class RepositoriesStore extends TypedBaseStore<
       this.db.owners,
       async () => {
         const repos = new Array<Repository>()
+        const dbRepositories = await this.db.repositories.toArray()
+        const repositoriesByPath = new Map(
+          dbRepositories.map(repository => [repository.path, repository])
+        )
+        const orderedRepositories = this.config
+          ? this.config
+              .getRepositories()
+              .map(({ path }) => repositoriesByPath.get(path))
+          : dbRepositories
 
-        for (const dbRepo of await this.db.repositories.toArray()) {
+        for (const dbRepo of orderedRepositories) {
+          if (dbRepo === undefined) {
+            continue
+          }
           assertNonNullable(dbRepo.id, 'no id after loading from db')
           repos.push(await this.toRepository(dbRepo))
         }
@@ -199,6 +253,7 @@ export class RepositoriesStore extends TypedBaseStore<
     endpoint: string,
     apiRepo: IAPIFullRepository
   ) {
+    await this.initializeConfig()
     await this.db.transaction(
       'rw',
       this.db.repositories,
@@ -220,6 +275,7 @@ export class RepositoriesStore extends TypedBaseStore<
       }
     )
 
+    await this.config?.addPath(path, null)
     this.emitUpdatedRepositories()
   }
 
@@ -232,6 +288,7 @@ export class RepositoriesStore extends TypedBaseStore<
     path: string,
     opts?: AddRepositoryOptions
   ): Promise<Repository> {
+    await this.initializeConfig()
     const repository = await this.db.transaction(
       'rw',
       this.db.repositories,
@@ -256,6 +313,7 @@ export class RepositoriesStore extends TypedBaseStore<
       }
     )
 
+    await this.config?.addPath(path, repository.alias)
     this.emitUpdatedRepositories()
 
     return repository
@@ -263,6 +321,8 @@ export class RepositoriesStore extends TypedBaseStore<
 
   /** Remove the given repository. */
   public async removeRepository(repository: Repository): Promise<void> {
+    await this.initializeConfig()
+    await this.config?.removePath(repository.path)
     await this.db.repositories.delete(repository.id)
     clearTagsToPush(repository)
 
@@ -299,6 +359,8 @@ export class RepositoriesStore extends TypedBaseStore<
     repository: Repository,
     alias: string | null
   ): Promise<void> {
+    await this.initializeConfig()
+    await this.config?.setAlias(repository.path, alias)
     await this.db.repositories.update(repository.id, { alias })
 
     this.emitUpdatedRepositories()
@@ -324,7 +386,19 @@ export class RepositoriesStore extends TypedBaseStore<
     repository: Repository,
     path: string
   ): Promise<Repository> {
-    await this.db.repositories.update(repository.id, { missing: false, path })
+    await this.initializeConfig()
+    await this.db.transaction('rw', this.db.repositories, () =>
+      this.db.repositories.update(repository.id, { missing: false, path })
+    )
+    try {
+      await this.config?.replacePath(repository.path, path)
+    } catch (error) {
+      await this.db.repositories.update(repository.id, {
+        missing: repository.missing,
+        path: repository.path,
+      })
+      throw error
+    }
 
     this.emitUpdatedRepositories()
 

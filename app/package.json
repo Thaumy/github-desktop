@@ -61,6 +61,7 @@
     "react-transition-group": "^4.4.1",
     "react-virtualized": "^9.22.6",
     "registry-js": "^1.16.0",
+    "smol-toml": "1.9.0",
     "source-map-support": "^0.4.15",
     "split2": "^4.2.0",
     "string-argv": "^0.3.2",
@@ -70,7 +71,8 @@
     "untildify": "^3.0.2",
     "which": "^5.0.0",
     "windows-argv-parser": "file:../vendor/windows-argv-parser",
-    "winston": "^3.6.0"
+    "winston": "^3.6.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@testing-library/dom": "8.20.1",

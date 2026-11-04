@@ -36,7 +36,7 @@ describe('repository list grouping', () => {
     assert.equal(grouped[0].items.length, 3)
   })
 
-  it('sorts all repositories alphabetically', () => {
+  it('preserves the configured repository order', () => {
     const repoA = new Repository('a', 1, null, false)
     const repoB = new Repository(
       'b',
@@ -62,11 +62,11 @@ describe('repository list grouping', () => {
 
     const items = grouped[0].items
     assert.equal(items.length, 5)
-    assert.equal(items[0].repository.path, 'a')
+    assert.equal(items[0].repository.path, 'c')
     assert.equal(items[1].repository.path, 'b')
-    assert.equal(items[2].repository.path, 'c')
+    assert.equal(items[2].repository.path, 'z')
     assert.equal(items[3].repository.path, 'd')
-    assert.equal(items[4].repository.path, 'z')
+    assert.equal(items[4].repository.path, 'a')
   })
 
   it('disambiguates repositories that share a name', () => {
