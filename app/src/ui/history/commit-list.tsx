@@ -949,7 +949,13 @@ export class CommitList extends React.Component<
         label: __DARWIN__
           ? `Copy Git Patch of ${count} Commits`
           : `Copy git patch of ${count} commits`,
-        action: () => this.props.onCopyCommitPatch?.(this.selectedCommits),
+        action: () => {
+          // Larger history indices are older; patches must be applied oldest first.
+          const commits = [...this.selectedCommits].sort(
+            (a, b) => this.rowForSHA(b.sha) - this.rowForSHA(a.sha)
+          )
+          this.props.onCopyCommitPatch?.(commits)
+        },
         enabled: this.props.onCopyCommitPatch !== undefined,
       },
     ]
